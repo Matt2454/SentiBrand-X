@@ -28,6 +28,9 @@ export function AnimatedNumber({
     duration 
   });
   
+  // Always call useTransform before any conditional logic
+  const animatedValue = useTransform(springValue, (latest) => Math.round(latest));
+  
   // For string values (like "N/A"), we'll animate opacity instead
   useEffect(() => {
     if (typeof value === "string" && isNaN(Number(value))) {
@@ -54,8 +57,6 @@ export function AnimatedNumber({
       </motion.span>
     );
   }
-
-  const animatedValue = useTransform(springValue, (latest) => Math.round(latest));
 
   return (
     <motion.span className={className}>

@@ -4,7 +4,8 @@ import { SentimentChart } from "../components/SentimentChart";
 import { ThemeToggle } from "../components/theme-toggle";
 import { AnimatedNumber } from "../components/AnimatedNumber";
 import { AnimatedTweetList } from "../components/AnimatedTweet";
-import { ErrorBoundary, ChartErrorBoundary, FeedErrorBoundary, KPICardErrorBoundary } from "../components/ErrorBoundary";
+import Link from "next/link";
+// import { ErrorBoundary, ChartErrorBoundary, FeedErrorBoundary, KPICardErrorBoundary } from "../components/ErrorBoundary";
 import {
   BarChart3,
   GitCompare,
@@ -157,7 +158,7 @@ async function getBrandComparisonStats(
   };
 }
 
-async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
+async function getDashboardStats(searchTerm: string, brandFilter?: string): Promise<DashboardStats> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -182,27 +183,49 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   const normalizedSearch = searchTerm.trim();
-  const hasBrandFilter = normalizedSearch.length > 0;
+  const normalizedBrand = brandFilter?.trim();
+  const hasSearchFilter = normalizedSearch.length > 0;
+  const hasBrandFilter = normalizedBrand && normalizedBrand.length > 0;
 
-  const baseMentionsCountQuery = supabase
+  // Extend temporal range to 30 days to include all seeded data
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // Build base queries
+  let baseMentionsCountQuery = supabase
     .from("brand_mentions")
-    .select("id", { count: "exact", head: true });
-  const baseMentionsRecentQuery = supabase
+    .select("id", { count: "exact", head: true })
+    .gte("posted_at", thirtyDaysAgo.toISOString());
+  
+  let baseMentionsRecentQuery = supabase
     .from("brand_mentions")
     .select("id, brand, author_handle, raw_text, posted_at")
     .order("posted_at", { ascending: false })
-    .limit(8);
-  const baseMentionsAllQuery = supabase.from("brand_mentions").select("id, brand");
+    .limit(8)
+    .gte("posted_at", thirtyDaysAgo.toISOString());
+  
+  let baseMentionsAllQuery = supabase
+    .from("brand_mentions")
+    .select("id, brand")
+    .gte("posted_at", thirtyDaysAgo.toISOString());
 
-  const mentionsCountQuery = hasBrandFilter
-    ? baseMentionsCountQuery.ilike("brand", `%${normalizedSearch}%`)
-    : baseMentionsCountQuery;
-  const recentMentionsQuery = hasBrandFilter
-    ? baseMentionsRecentQuery.ilike("brand", `%${normalizedSearch}%`)
-    : baseMentionsRecentQuery;
-  const allMentionsQuery = hasBrandFilter
-    ? baseMentionsAllQuery.ilike("brand", `%${normalizedSearch}%`)
-    : baseMentionsAllQuery;
+  // Apply brand filter if specified
+  if (hasBrandFilter) {
+    baseMentionsCountQuery = baseMentionsCountQuery.eq("brand", normalizedBrand);
+    baseMentionsRecentQuery = baseMentionsRecentQuery.eq("brand", normalizedBrand);
+    baseMentionsAllQuery = baseMentionsAllQuery.eq("brand", normalizedBrand);
+  }
+
+  // Apply search filter if specified (but only if no brand filter is active)
+  if (hasSearchFilter && !hasBrandFilter) {
+    baseMentionsCountQuery = baseMentionsCountQuery.ilike("brand", `%${normalizedSearch}%`);
+    baseMentionsRecentQuery = baseMentionsRecentQuery.ilike("brand", `%${normalizedSearch}%`);
+    baseMentionsAllQuery = baseMentionsAllQuery.ilike("brand", `%${normalizedSearch}%`);
+  }
+
+  const mentionsCountQuery = baseMentionsCountQuery;
+  const recentMentionsQuery = baseMentionsRecentQuery;
+  const allMentionsQuery = baseMentionsAllQuery;
 
   const [{ count }, recentMentionsRes, allMentionsRes] = await Promise.all([
     mentionsCountQuery,
@@ -327,7 +350,7 @@ export default async function Home({
 }) {
   const { brand, brandA, brandB } = await searchParams;
   const searchTerm = brand?.trim() ?? "";
-  const stats = await getDashboardStats(searchTerm);
+  const stats = await getDashboardStats(searchTerm, searchTerm); // Use brand as filter
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   let comparison = stats.comparison;
@@ -356,22 +379,22 @@ export default async function Home({
             </div>
 
             <nav className="space-y-2">
-              <div className="flex items-center gap-3 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white">
+              <Link href="/" className="flex items-center gap-3 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100">
                 <LayoutDashboard className="h-4 w-4" />
                 Overview
-              </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+              </Link>
+              <Link href="/analytics" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <BarChart3 className="h-4 w-4" />
                 Analytics
-              </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+              </Link>
+              <Link href="/mentions" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <MessageSquareText className="h-4 w-4" />
                 Mentions
-              </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+              </Link>
+              <Link href="/brand-search" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <Search className="h-4 w-4" />
                 Brand Search
-              </div>
+              </Link>
             </nav>
           </div>
         </aside>
@@ -531,41 +554,35 @@ export default async function Home({
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-zinc-900">Statistiche</h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-zinc-500">Total Mentions</p>
-                    <MessageSquareText className="h-4 w-4 text-zinc-500" />
-                  </div>
-                  <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                    <AnimatedNumber value={stats.totalMentions} />
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-zinc-500">Total Mentions</p>
+                  <MessageSquareText className="h-4 w-4 text-zinc-500" />
+                </div>
+                <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                  <AnimatedNumber value={stats.totalMentions} />
+                </p>
+              </article>
 
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-zinc-500">Average Sentiment</p>
-                    <Sparkles className="h-4 w-4 text-zinc-500" />
-                  </div>
-                  <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                    <AnimatedNumber value={stats.averageSentiment} />
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-zinc-500">Average Sentiment</p>
+                  <Sparkles className="h-4 w-4 text-zinc-500" />
+                </div>
+                <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                  <AnimatedNumber value={stats.averageSentiment} />
+                </p>
+              </article>
 
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-zinc-500">Top Brand</p>
-                    <Trophy className="h-4 w-4 text-zinc-500" />
-                  </div>
-                  <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                    <AnimatedNumber value={stats.topBrand} />
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-zinc-500">Top Brand</p>
+                  <Trophy className="h-4 w-4 text-zinc-500" />
+                </div>
+                <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                  <AnimatedNumber value={stats.topBrand} />
+                </p>
+              </article>
             </div>
           </div>
 
@@ -574,78 +591,66 @@ export default async function Home({
               Advanced KPIs
             </h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <p className="text-sm text-zinc-500">Total Analyzed</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">
-                    <AnimatedNumber value={stats.kpis.totalAnalyzed} />
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <p className="text-sm text-zinc-500">Avg Confidence</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">
-                    <AnimatedNumber value={stats.kpis.averageConfidence} />
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <p className="text-sm text-zinc-500">Positive Ratio</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">
-                    <AnimatedNumber value={stats.kpis.positiveRatio} />
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
-              <KPICardErrorBoundary>
-                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <p className="text-sm text-zinc-500">Last Update</p>
-                  <p className="mt-2 text-sm font-semibold text-zinc-900">
-                    {stats.kpis.lastUpdate}
-                  </p>
-                </article>
-              </KPICardErrorBoundary>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <p className="text-sm text-zinc-500">Total Analyzed</p>
+                <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                  <AnimatedNumber value={stats.kpis.totalAnalyzed} />
+                </p>
+              </article>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <p className="text-sm text-zinc-500">Avg Confidence</p>
+                <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                  <AnimatedNumber value={stats.kpis.averageConfidence} />
+                </p>
+              </article>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <p className="text-sm text-zinc-500">Positive Ratio</p>
+                <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                  <AnimatedNumber value={stats.kpis.positiveRatio} />
+                </p>
+              </article>
+              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <p className="text-sm text-zinc-500">Last Update</p>
+                <p className="mt-2 text-sm font-semibold text-zinc-900">
+                  {stats.kpis.lastUpdate}
+                </p>
+              </article>
             </div>
           </section>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <ChartErrorBoundary>
-              <SentimentChart
-                positive={stats.sentimentBreakdown.positive}
-                neutral={stats.sentimentBreakdown.neutral}
-                negative={stats.sentimentBreakdown.negative}
-              />
-            </ChartErrorBoundary>
+            <SentimentChart
+              positive={stats.sentimentBreakdown.positive}
+              neutral={stats.sentimentBreakdown.neutral}
+              negative={stats.sentimentBreakdown.negative}
+            />
 
-            <FeedErrorBoundary>
-              <section className="rounded-2xl border border-zinc-200 bg-white lg:col-span-2">
-                <div className="border-b border-zinc-200 px-5 py-4">
-                  <h3 className="text-lg font-semibold text-zinc-900">
-                    Recent Tweets
-                  </h3>
-                  <p className="text-sm text-zinc-500">
-                    Latest mentions ingested from your Supabase database.
-                  </p>
+            <section className="rounded-2xl border border-zinc-200 bg-white lg:col-span-2">
+              <div className="border-b border-zinc-200 px-5 py-4">
+                <h3 className="text-lg font-semibold text-zinc-900">
+                  Recent Tweets
+                </h3>
+                <p className="text-sm text-zinc-500">
+                  Latest mentions ingested from your Supabase database.
+                </p>
+              </div>
+
+              {!stats.hasDataSource ? (
+                <div className="px-5 py-8 text-sm text-zinc-600">
+                  Configure `NEXT_PUBLIC_SUPABASE_URL` and
+                  `NEXT_PUBLIC_SUPABASE_ANON_KEY` to load live data.
                 </div>
-
-                {!stats.hasDataSource ? (
-                  <div className="px-5 py-8 text-sm text-zinc-600">
-                    Configure `NEXT_PUBLIC_SUPABASE_URL` and
-                    `NEXT_PUBLIC_SUPABASE_ANON_KEY` to load live data.
-                  </div>
-                ) : stats.recentTweets.length === 0 ? (
-                  <div className="px-5 py-8 text-sm text-zinc-600">
-                    No mentions found yet. Run `npm run process:mentions` to
-                    ingest and analyze mock tweets.
-                  </div>
-                ) : (
-                  <ul className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                    <AnimatedTweetList tweets={stats.recentTweets} />
-                  </ul>
-                )}
-              </section>
-            </FeedErrorBoundary>
+              ) : stats.recentTweets.length === 0 ? (
+                <div className="px-5 py-8 text-sm text-zinc-600">
+                  No mentions found yet. Run `npm run process:mentions` to
+                  ingest and analyze mock tweets.
+                </div>
+              ) : (
+                <ul className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                  <AnimatedTweetList tweets={stats.recentTweets} />
+                </ul>
+              )}
+            </section>
           </div>
         </section>
       </div>

@@ -61,18 +61,28 @@ export async function fetchRealtimeSnapshot(
   const normalized = brandFilter?.trim();
 
   try {
-    // Optimized queries with specific field selection
-    const mentionsQuery = supabase
+    // Extend temporal range to 30 days to include all seeded data
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Build base queries with brand filtering
+    let mentionsQuery = supabase
       .from("brand_mentions")
       .select("id, brand")
-      .ilike("brand", normalized ? `%${normalized}%` : "%%");
+      .gte("posted_at", thirtyDaysAgo.toISOString());
 
-    const recentQuery = supabase
+    let recentQuery = supabase
       .from("brand_mentions")
       .select("id, brand, author_handle, raw_text, posted_at")
-      .ilike("brand", normalized ? `%${normalized}%` : "%%")
       .order("posted_at", { ascending: false })
-      .limit(6);
+      .limit(6)
+      .gte("posted_at", thirtyDaysAgo.toISOString());
+
+    // Apply brand filter if specified
+    if (normalized && normalized.length > 0) {
+      mentionsQuery = mentionsQuery.eq("brand", normalized);
+      recentQuery = recentQuery.eq("brand", normalized);
+    }
 
     const [mentionsRes, recentRes] = await Promise.all([
       mentionsQuery,

@@ -6,11 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "ingest:mock": "tsx scripts/ingestMockTweets.ts",
-    "test:ai": "tsx scripts/testAI.ts",
+    "lint": "next lint",
     "process:mentions": "tsx scripts/analyzeAndIngest.ts",
-    "watch:mentions": "tsx scripts/watchMentions.ts"
+    "watch:mentions": "tsx scripts/watchMentions.ts",
+    "seed:bigdata": "tsx scripts/seedBigData.ts",
+    "migrate:db": "tsx scripts/migrateDatabase.ts",
+    "debug:db": "tsx scripts/debugDatabase.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.15",

@@ -9,8 +9,12 @@ export interface BrandMention {
   id: string;
   brand: string;
   author_handle: string;
+  author_followers?: number;
   raw_text: string;
   posted_at: string;
+  likes?: number;
+  retweets?: number;
+  replies?: number;
 }
 
 export interface SentimentAnalysis {

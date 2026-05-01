@@ -135,119 +135,117 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 // Specialized error boundaries for specific components
-export function ChartErrorBoundary({ children }: { children: ReactNode }) {
-  return (
-    <ErrorBoundary
-      component="Chart"
-      fallback={
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/50">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-amber-600 dark:text-amber-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                Chart temporarily unavailable
-              </h3>
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                The sentiment chart couldn't load. Please try refreshing the page.
-              </p>
-            </div>
+const ChartErrorBoundaryComponent = ({ children }: { children: ReactNode }) => (
+  <ErrorBoundary
+    component="Chart"
+    fallback={
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/50">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-amber-600 dark:text-amber-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              Chart temporarily unavailable
+            </h3>
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              The sentiment chart couldn't load. Please try refreshing the page.
+            </p>
           </div>
         </div>
-      }
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
+      </div>
+    }
+  >
+    {children}
+  </ErrorBoundary>
+);
 
-export function FeedErrorBoundary({ children }: { children: ReactNode }) {
-  return (
-    <ErrorBoundary
-      component="Live Feed"
-      fallback={
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/50">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-amber-600 dark:text-amber-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                Live feed temporarily unavailable
-              </h3>
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                Recent tweets couldn't be loaded. Please try refreshing the page.
-              </p>
-            </div>
+const FeedErrorBoundaryComponent = ({ children }: { children: ReactNode }) => (
+  <ErrorBoundary
+    component="Live Feed"
+    fallback={
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/50">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-amber-600 dark:text-amber-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              Live feed temporarily unavailable
+            </h3>
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Recent tweets couldn't be loaded. Please try refreshing the page.
+            </p>
           </div>
         </div>
-      }
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
+      </div>
+    }
+  >
+    {children}
+  </ErrorBoundary>
+);
 
-export function KPICardErrorBoundary({ children }: { children: ReactNode }) {
-  return (
-    <ErrorBoundary
-      component="KPI Card"
-      fallback={
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/50">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-4 w-4 text-amber-600 dark:text-amber-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                Metric temporarily unavailable
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                This metric couldn't be calculated.
-              </p>
-            </div>
+const KPICardErrorBoundaryComponent = ({ children }: { children: ReactNode }) => (
+  <ErrorBoundary
+    component="KPI Card"
+    fallback={
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/50">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-4 w-4 text-amber-600 dark:text-amber-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              Metric temporarily unavailable
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              This metric couldn't be calculated.
+            </p>
           </div>
         </div>
-      }
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
+      </div>
+    }
+  >
+    {children}
+  </ErrorBoundary>
+);
+
+export const ChartErrorBoundary = React.memo(ChartErrorBoundaryComponent);
+export const FeedErrorBoundary = React.memo(FeedErrorBoundaryComponent);
+export const KPICardErrorBoundary = React.memo(KPICardErrorBoundaryComponent);
