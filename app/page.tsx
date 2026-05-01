@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import { LiveMentionsStatus } from "../components/LiveMentionsStatus";
 import { SentimentChart } from "../components/SentimentChart";
+import { ThemeToggle } from "../components/theme-toggle";
+import { AnimatedNumber } from "../components/AnimatedNumber";
+import { AnimatedTweetList } from "../components/AnimatedTweet";
+import { ErrorBoundary, ChartErrorBoundary, FeedErrorBoundary, KPICardErrorBoundary } from "../components/ErrorBoundary";
 import {
   BarChart3,
   GitCompare,
@@ -34,6 +39,12 @@ type DashboardStats = {
     left: BrandComparisonStats | null;
     right: BrandComparisonStats | null;
   };
+  kpis: {
+    totalAnalyzed: number;
+    averageConfidence: string;
+    positiveRatio: string;
+    lastUpdate: string;
+  };
   hasDataSource: boolean;
 };
 
@@ -49,7 +60,7 @@ type BrandComparisonStats = {
 };
 
 function computeSentimentSummary(analyses: { sentiment_label: string }[]) {
-  const numericSentiment = analyses.map((analysis) => {
+  const numericSentiment: number[] = analyses.map((analysis) => {
     if (analysis.sentiment_label === "positive") {
       return 1;
     }
@@ -92,8 +103,14 @@ function computeSentimentSummary(analyses: { sentiment_label: string }[]) {
   return { averageSentiment, sentimentBreakdown };
 }
 
+type AnalysisRow = {
+  sentiment_label: string;
+  confidence: number | null;
+  created_at: string;
+};
+
 async function getBrandComparisonStats(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient<any>>,
   brand: string,
 ): Promise<BrandComparisonStats | null> {
   const normalized = brand.trim();
@@ -111,13 +128,14 @@ async function getBrandComparisonStats(
     return null;
   }
 
-  const mentionIds = (mentionsRes.data ?? []).map((item) => item.id);
-  let analyses: { sentiment_label: string }[] = [];
+  const mentionRows = (mentionsRes.data ?? []) as { id: string }[];
+  const mentionIds = mentionRows.map((item) => item.id);
+  let analyses: AnalysisRow[] = [];
 
   if (mentionIds.length > 0) {
     const analysesRes = await supabase
       .from("sentiment_analyses")
-      .select("sentiment_label")
+      .select("sentiment_label, confidence, created_at")
       .in("mention_id", mentionIds);
 
     if (analysesRes.error) {
@@ -152,6 +170,12 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
       recentTweets: [],
       brandOptions: [],
       comparison: { left: null, right: null },
+      kpis: {
+        totalAnalyzed: 0,
+        averageConfidence: "N/A",
+        positiveRatio: "N/A",
+        lastUpdate: "N/A",
+      },
       hasDataSource: false,
     };
   }
@@ -195,6 +219,12 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
       recentTweets: [],
       brandOptions: [],
       comparison: { left: null, right: null },
+      kpis: {
+        totalAnalyzed: 0,
+        averageConfidence: "N/A",
+        positiveRatio: "N/A",
+        lastUpdate: "N/A",
+      },
       hasDataSource: true,
     };
   }
@@ -203,12 +233,12 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
   const allMentions = allMentionsRes.data ?? [];
   const mentionIds = allMentions.map((mention) => mention.id);
 
-  let analyses: { sentiment_label: string }[] = [];
+  let analyses: AnalysisRow[] = [];
 
   if (mentionIds.length > 0) {
     const analysesRes = await supabase
       .from("sentiment_analyses")
-      .select("sentiment_label")
+      .select("sentiment_label, confidence, created_at")
       .in("mention_id", mentionIds);
 
     if (analysesRes.error) {
@@ -220,6 +250,12 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
         recentTweets: mentions,
         brandOptions: [],
         comparison: { left: null, right: null },
+        kpis: {
+          totalAnalyzed: 0,
+          averageConfidence: "N/A",
+          positiveRatio: "N/A",
+          lastUpdate: "N/A",
+        },
         hasDataSource: true,
       };
     }
@@ -245,6 +281,24 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
   const brandOptions = Array.from(new Set(allMentions.map((m) => m.brand))).sort(
     (a, b) => a.localeCompare(b),
   );
+  const totalAnalyzed = analyses.length;
+  const validConfidenceValues = analyses
+    .map((analysis) => analysis.confidence)
+    .filter((value): value is number => typeof value === "number");
+  const averageConfidence =
+    validConfidenceValues.length > 0
+      ? `${(
+          validConfidenceValues.reduce((sum, value) => sum + value, 0) /
+          validConfidenceValues.length
+        ).toFixed(2)}`
+      : "N/A";
+  const positiveRatio =
+    totalAnalyzed > 0
+      ? `${Math.round((sentimentBreakdown.positive / totalAnalyzed) * 100)}%`
+      : "N/A";
+  const latestCreatedAt = analyses
+    .map((analysis) => analysis.created_at)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
 
   return {
     totalMentions: count ?? 0,
@@ -254,6 +308,14 @@ async function getDashboardStats(searchTerm: string): Promise<DashboardStats> {
     recentTweets: mentions,
     brandOptions,
     comparison: { left: null, right: null },
+    kpis: {
+      totalAnalyzed,
+      averageConfidence,
+      positiveRatio,
+      lastUpdate: latestCreatedAt
+        ? new Date(latestCreatedAt).toLocaleString()
+        : "N/A",
+    },
     hasDataSource: true,
   };
 }
@@ -280,15 +342,15 @@ export default async function Home({
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row">
-        <aside className="border-b border-zinc-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
+        <aside className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
           <div className="space-y-8 p-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                 Sentibrand
               </p>
-              <h1 className="mt-2 text-xl font-semibold text-zinc-900">
+              <h1 className="mt-2 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                 Dashboard
               </h1>
             </div>
@@ -298,15 +360,15 @@ export default async function Home({
                 <LayoutDashboard className="h-4 w-4" />
                 Overview
               </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
                 <BarChart3 className="h-4 w-4" />
                 Analytics
               </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
                 <MessageSquareText className="h-4 w-4" />
                 Mentions
               </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
                 <Search className="h-4 w-4" />
                 Brand Search
               </div>
@@ -315,11 +377,21 @@ export default async function Home({
         </aside>
 
         <section className="flex-1 space-y-6 p-4 sm:p-6">
-          <header className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Phase 03 · Tasks 3.1 + 3.3</p>
-            <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
-              Brand sentiment command center
-            </h2>
+          <header className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Phase 03 · Tasks 3.1 + 3.3 + 3.6
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  Brand sentiment command center
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <LiveMentionsStatus brand={searchTerm} />
+                <ThemeToggle />
+              </div>
+            </div>
             <form className="mt-4 flex w-full flex-col gap-2 sm:max-w-md sm:flex-row">
               <label className="sr-only" htmlFor="brand-search">
                 Search brand
@@ -331,7 +403,7 @@ export default async function Home({
                   name="brand"
                   defaultValue={searchTerm}
                   placeholder="Filter by brand (e.g. Apple)"
-                  className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-10 pr-3 text-sm text-zinc-900 outline-none ring-emerald-500/30 transition focus:ring-4"
+                  className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-10 pr-3 text-sm text-zinc-900 outline-none ring-emerald-500/30 transition focus:ring-4 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 />
               </div>
               <button
@@ -345,7 +417,9 @@ export default async function Home({
             {searchTerm ? (
               <p className="mt-2 text-sm text-zinc-500">
                 Showing results for brand filter:{" "}
-                <span className="font-medium text-zinc-800">{searchTerm}</span>
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  {searchTerm}
+                </span>
               </p>
             ) : null}
           </header>
@@ -457,85 +531,121 @@ export default async function Home({
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-zinc-900">Statistiche</h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-zinc-500">Total Mentions</p>
-                  <MessageSquareText className="h-4 w-4 text-zinc-500" />
-                </div>
-                <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                  {stats.totalMentions}
-                </p>
-              </article>
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-500">Total Mentions</p>
+                    <MessageSquareText className="h-4 w-4 text-zinc-500" />
+                  </div>
+                  <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                    <AnimatedNumber value={stats.totalMentions} />
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
 
-              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-zinc-500">Average Sentiment</p>
-                  <Sparkles className="h-4 w-4 text-zinc-500" />
-                </div>
-                <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                  {stats.averageSentiment}
-                </p>
-              </article>
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-500">Average Sentiment</p>
+                    <Sparkles className="h-4 w-4 text-zinc-500" />
+                  </div>
+                  <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                    <AnimatedNumber value={stats.averageSentiment} />
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
 
-              <article className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-zinc-500">Top Brand</p>
-                  <Trophy className="h-4 w-4 text-zinc-500" />
-                </div>
-                <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                  {stats.topBrand}
-                </p>
-              </article>
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-500">Top Brand</p>
+                    <Trophy className="h-4 w-4 text-zinc-500" />
+                  </div>
+                  <p className="mt-3 text-3xl font-semibold text-zinc-900">
+                    <AnimatedNumber value={stats.topBrand} />
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
             </div>
           </div>
 
+          <section className="space-y-3">
+            <h3 className="text-lg font-semibold text-zinc-900">
+              Advanced KPIs
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <p className="text-sm text-zinc-500">Total Analyzed</p>
+                  <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                    <AnimatedNumber value={stats.kpis.totalAnalyzed} />
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <p className="text-sm text-zinc-500">Avg Confidence</p>
+                  <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                    <AnimatedNumber value={stats.kpis.averageConfidence} />
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <p className="text-sm text-zinc-500">Positive Ratio</p>
+                  <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                    <AnimatedNumber value={stats.kpis.positiveRatio} />
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
+              <KPICardErrorBoundary>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <p className="text-sm text-zinc-500">Last Update</p>
+                  <p className="mt-2 text-sm font-semibold text-zinc-900">
+                    {stats.kpis.lastUpdate}
+                  </p>
+                </article>
+              </KPICardErrorBoundary>
+            </div>
+          </section>
+
           <div className="grid gap-6 lg:grid-cols-3">
-            <SentimentChart
-              positive={stats.sentimentBreakdown.positive}
-              neutral={stats.sentimentBreakdown.neutral}
-              negative={stats.sentimentBreakdown.negative}
-            />
+            <ChartErrorBoundary>
+              <SentimentChart
+                positive={stats.sentimentBreakdown.positive}
+                neutral={stats.sentimentBreakdown.neutral}
+                negative={stats.sentimentBreakdown.negative}
+              />
+            </ChartErrorBoundary>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white lg:col-span-2">
-              <div className="border-b border-zinc-200 px-5 py-4">
-                <h3 className="text-lg font-semibold text-zinc-900">
-                  Recent Tweets
-                </h3>
-                <p className="text-sm text-zinc-500">
-                  Latest mentions ingested from your Supabase database.
-                </p>
-              </div>
+            <FeedErrorBoundary>
+              <section className="rounded-2xl border border-zinc-200 bg-white lg:col-span-2">
+                <div className="border-b border-zinc-200 px-5 py-4">
+                  <h3 className="text-lg font-semibold text-zinc-900">
+                    Recent Tweets
+                  </h3>
+                  <p className="text-sm text-zinc-500">
+                    Latest mentions ingested from your Supabase database.
+                  </p>
+                </div>
 
-              {!stats.hasDataSource ? (
-                <div className="px-5 py-8 text-sm text-zinc-600">
-                  Configure `NEXT_PUBLIC_SUPABASE_URL` and
-                  `NEXT_PUBLIC_SUPABASE_ANON_KEY` to load live data.
-                </div>
-              ) : stats.recentTweets.length === 0 ? (
-                <div className="px-5 py-8 text-sm text-zinc-600">
-                  No mentions found yet. Run `npm run process:mentions` to
-                  ingest and analyze mock tweets.
-                </div>
-              ) : (
-                <ul className="divide-y divide-zinc-200">
-                  {stats.recentTweets.map((tweet) => (
-                    <li key={tweet.id} className="space-y-2 px-5 py-4">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                        <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-700">
-                          {tweet.brand}
-                        </span>
-                        <span>{tweet.author_handle}</span>
-                        <span>•</span>
-                        <span>{new Date(tweet.posted_at).toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm leading-6 text-zinc-800">
-                        {tweet.raw_text}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+                {!stats.hasDataSource ? (
+                  <div className="px-5 py-8 text-sm text-zinc-600">
+                    Configure `NEXT_PUBLIC_SUPABASE_URL` and
+                    `NEXT_PUBLIC_SUPABASE_ANON_KEY` to load live data.
+                  </div>
+                ) : stats.recentTweets.length === 0 ? (
+                  <div className="px-5 py-8 text-sm text-zinc-600">
+                    No mentions found yet. Run `npm run process:mentions` to
+                    ingest and analyze mock tweets.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                    <AnimatedTweetList tweets={stats.recentTweets} />
+                  </ul>
+                )}
+              </section>
+            </FeedErrorBoundary>
           </div>
         </section>
       </div>

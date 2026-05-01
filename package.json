@@ -9,14 +9,19 @@
     "lint": "eslint",
     "ingest:mock": "tsx scripts/ingestMockTweets.ts",
     "test:ai": "tsx scripts/testAI.ts",
-    "process:mentions": "tsx scripts/analyzeAndIngest.ts"
+    "process:mentions": "tsx scripts/analyzeAndIngest.ts",
+    "watch:mentions": "tsx scripts/watchMentions.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.15",
     "@supabase/supabase-js": "^2.105.1",
+    "@types/lodash": "^4.17.24",
     "dotenv": "^17.4.2",
+    "framer-motion": "^12.38.0",
+    "lodash": "^4.18.1",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
+    "next-themes": "^0.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1"

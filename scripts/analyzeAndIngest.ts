@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename);
 
 const MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment";
 const DELAY_MS = 500;
+const REALTIME_PING_URL = process.env.REALTIME_PING_URL;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -108,6 +109,14 @@ async function run() {
     process.stdout.write(
       `Processed ${tweet.id} -> ${sentiment.sentiment} (${sentiment.confidence.toFixed(4)})\n`,
     );
+
+    // Optional explicit trigger: useful if an external real-time channel is configured.
+    if (REALTIME_PING_URL) {
+      await fetch(REALTIME_PING_URL, { method: "POST" }).catch(() => {
+        // Non-blocking on purpose: ingestion must continue even if trigger fails.
+      });
+    }
+
     await wait(DELAY_MS);
   }
 

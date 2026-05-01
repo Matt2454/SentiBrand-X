@@ -75,3 +75,4 @@ See `.env.example` for all required variables:
 - `HUGGINGFACE_API_KEY`
 - `X_BEARER_TOKEN`
 - `MOCK_INGESTION_DELAY_MS`
+- `REALTIME_PING_URL` (optional, defaults to local SSE ping endpoint)
