@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SentiBrand X Analyzer
 
-## Getting Started
+Real-time sentiment dashboard for brand mentions from X/Twitter, powered by Next.js, Hugging Face, and Supabase.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js 16 (App Router) + TypeScript
+- Tailwind CSS + Lucide React
+- Supabase (`@supabase/supabase-js`)
+- Mock ingestion script with `tsx`
+
+## Quick Start
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy environment variables and fill values:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Start development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Available Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `npm run dev` — start local app
+- `npm run build` — production build
+- `npm run start` — run production server
+- `npm run lint` — run ESLint
+- `npm run ingest:mock` — simulate X ingestion stream from `data/mockData.json`
+- `npm run test:ai` — run a quick Hugging Face sentiment smoke test
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Data Ingestion Mock Pipeline
 
-## Learn More
+Mock records are stored in `data/mockData.json`.
 
-To learn more about Next.js, take a look at the following resources:
+Run:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run ingest:mock
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This streams line-by-line JSON ingestion events to stdout so you can test processing pipelines without external APIs.
 
-## Deploy on Vercel
+## Supabase Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Database schema is provided in:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `supabase/schema.sql`
+
+Apply it in your Supabase SQL editor to create:
+
+- `brand_mentions`
+- `sentiment_analyses`
+
+Client initialization lives in:
+
+- `lib/supabase.ts`
+
+## Environment Variables
+
+See `.env.example` for all required variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `HUGGINGFACE_API_KEY`
+- `X_BEARER_TOKEN`
+- `MOCK_INGESTION_DELAY_MS`
