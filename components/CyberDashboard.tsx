@@ -158,14 +158,52 @@ export function CyberDashboard() {
         }
         
         // Now try the actual query with correct column names
-        const { data: analyses, error: analysesError } = await supabase
+        console.log("🔍 Query details:", {
+          mentionIdsLength: mentionIds.length,
+          firstFewIds: mentionIds.slice(0, 3),
+          hasData: mentionIds.length > 0
+        });
+
+        if (mentionIds.length === 0) {
+          console.log("⚠️ No mention IDs to query, skipping sentiment analysis");
+          // Set empty state data
+          setBrands([]);
+          setHeroStats({
+            totalMentions: 0,
+            avgSentiment: 0,
+            topBrand: 'No data',
+            sentimentTrend: 'stable',
+            trendChange: 0
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Try a simpler query first to test connection
+        console.log("🧪 Testing simple query...");
+        const { data: testData, error: testError } = await supabase
+          .from("sentiment_analyses")
+          .select("mention_id")
+          .limit(1);
+
+        if (testError) {
+          console.error("❌ Simple query failed:", testError);
+          throw testError;
+        }
+
+        console.log("✅ Simple query successful, data:", testData);
+
+        // Try alternative approach: get all recent analyses and filter client-side
+        console.log("📡 Fetching all recent sentiment analyses...");
+        const { data: allAnalyses, error: allAnalysesError } = await supabase
           .from("sentiment_analyses")
           .select("mention_id, confidence, sentiment_label")
-          .in("mention_id", mentionIds);
+          .order("created_at", { ascending: false })
+          .limit(1000); // Get recent analyses
 
-        if (analysesError) {
-          console.error("❌ Analyses query error:", analysesError);
-          console.error("Error details:", JSON.stringify(analysesError, null, 2));
+        if (allAnalysesError) {
+          console.error("❌ All analyses query error:", allAnalysesError);
+          console.error("Error details:", JSON.stringify(allAnalysesError, null, 2));
           
           // Try fallback without sentiment data
           console.log("🔄 Trying fallback without sentiment data...");
@@ -225,7 +263,9 @@ export function CyberDashboard() {
           return;
         }
 
-        console.log("✅ Analyses fetched:", analyses?.length || 0, "records");
+        // Filter analyses to only include those that match our mention IDs
+        const analyses = allAnalyses?.filter(analysis => mentionIds.includes(analysis.mention_id)) || [];
+        console.log("✅ Analyses fetched:", analyses.length, "records (from", allAnalyses?.length || 0, "total)");
 
         // Process data
         const brandMap = new Map<string, { mentions: number; sentiments: number[] }>();
@@ -236,7 +276,7 @@ export function CyberDashboard() {
           brandMap.set(mention.brand, current);
         });
 
-        analyses?.forEach(analysis => {
+        analyses.forEach((analysis: any) => {
           const mention = mentions?.find(m => m.id === analysis.mention_id);
           if (mention) {
             const current = brandMap.get(mention.brand) || { mentions: 0, sentiments: [] };
