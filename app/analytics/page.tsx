@@ -258,43 +258,80 @@ export default function AnalyticsPage() {
   if (!selectedBrand) {
     return (
       <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <div className="container mx-auto px-4 py-8">
-          <header className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="flex items-start justify-between gap-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row">
+          {/* Sidebar Navigation */}
+          <aside className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
+            <div className="space-y-8 p-6">
               <div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  Il Cervello · Advanced Analytics
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                  Sentibrand
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-                  Sentiment Intelligence Dashboard
-                </h2>
+                <h1 className="mt-2 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  Analytics
+                </h1>
               </div>
-              <div className="flex items-center gap-2">
-                <LiveMentionsStatus />
-                <ThemeToggle />
-              </div>
-            </div>
-            
-            {/* Brand Selector */}
-            <div className="mt-4 flex items-center gap-4">
-              <BrandSelector 
-                onBrandSelect={handleBrandSelect}
-                placeholder="Select a brand to view analytics..."
-                className="flex-1 max-w-md"
-              />
-            </div>
-          </header>
 
-          {/* Empty State */}
-          <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-12 text-center dark:border-zinc-800 dark:bg-zinc-900">
-            <BarChart3 className="mx-auto h-16 w-16 text-zinc-400" />
-            <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Select a Brand to View Analytics
-            </h3>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-              Choose a brand from the dropdown above to see detailed sentiment analysis, trends, and performance metrics.
-            </p>
-          </div>
+              <nav className="space-y-2">
+                <Link href="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Overview
+                </Link>
+                <Link href="/analytics" className="flex items-center gap-3 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100">
+                  <BarChart3 className="h-4 w-4" />
+                  Analytics
+                </Link>
+                <Link href="/mentions" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                  <MessageSquareText className="h-4 w-4" />
+                  Mentions
+                </Link>
+                <Link href="/brand-search" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                  <Search className="h-4 w-4" />
+                  Brand Search
+                </Link>
+              </nav>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <section className="flex-1 space-y-6 p-4 sm:p-6">
+            {/* Header */}
+            <header className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Il Cervello · Advanced Analytics
+                  </p>
+                  <h2 className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+                    Sentiment Intelligence Dashboard
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <LiveMentionsStatus />
+                  <ThemeToggle />
+                </div>
+              </div>
+              
+              {/* Brand Selector */}
+              <div className="mt-4 flex items-center gap-4">
+                <BrandSelector 
+                  onBrandSelect={handleBrandSelect}
+                  placeholder="Select a brand to view analytics..."
+                  className="flex-1 max-w-md"
+                />
+              </div>
+            </header>
+
+            {/* Empty State */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-12 text-center dark:border-zinc-800 dark:bg-zinc-900">
+              <BarChart3 className="mx-auto h-16 w-16 text-zinc-400" />
+              <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                Select a Brand to View Analytics
+              </h3>
+              <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+                Choose a brand from the dropdown above to see detailed sentiment analysis, trends, and performance metrics.
+              </p>
+            </div>
+          </section>
         </div>
       </main>
     );

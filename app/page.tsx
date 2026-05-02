@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
 import { LiveMentionsStatus } from "../components/LiveMentionsStatus";
 import { SentimentChart } from "../components/SentimentChart";
 import { ThemeToggle } from "../components/theme-toggle";
@@ -357,18 +358,18 @@ export default async function Home({
                 <LayoutDashboard className="h-4 w-4" />
                 Overview
               </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+              <Link href="/analytics" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <BarChart3 className="h-4 w-4" />
                 Analytics
-              </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+              </Link>
+              <Link href="/mentions" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <MessageSquareText className="h-4 w-4" />
                 Mentions
-              </div>
-              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300">
+              </Link>
+              <Link href="/brand-search" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <Search className="h-4 w-4" />
                 Brand Search
-              </div>
+              </Link>
             </nav>
           </div>
         </aside>
