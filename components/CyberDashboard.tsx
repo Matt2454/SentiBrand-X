@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { TrendingUp, TrendingDown, Activity, Zap, Wifi } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AnimatedNumber } from "./AnimatedNumber";
 
 interface BrandData {
@@ -22,8 +23,9 @@ interface HeroStats {
 }
 
 export function CyberDashboard() {
+  const router = useRouter();
   const [brands, setBrands] = useState<BrandData[]>([]);
-  const [heroStats, setHeroStats] = useState<HeroStats>({
+  const [heroStats, setHeroStats] = useState({
     totalMentions: 0,
     avgSentiment: 0,
     topBrand: '',
@@ -141,9 +143,24 @@ export function CyberDashboard() {
         }
 
         console.log("📡 Fetching sentiment analyses...");
+        
+        // First, let's check what columns actually exist in the table
+        console.log("🔍 Checking sentiment_analyses table structure...");
+        const { data: tableInfo, error: tableError } = await supabase
+          .from("sentiment_analyses")
+          .select("*")
+          .limit(1);
+          
+        if (tableError) {
+          console.error("❌ Table structure check failed:", tableError);
+        } else if (tableInfo && tableInfo.length > 0) {
+          console.log("✅ Found table columns:", Object.keys(tableInfo[0]));
+        }
+        
+        // Now try the actual query with correct column names
         const { data: analyses, error: analysesError } = await supabase
           .from("sentiment_analyses")
-          .select("mention_id, sentiment_score, sentiment_label")
+          .select("mention_id, confidence, sentiment_label")
           .in("mention_id", mentionIds);
 
         if (analysesError) {
@@ -223,7 +240,9 @@ export function CyberDashboard() {
           const mention = mentions?.find(m => m.id === analysis.mention_id);
           if (mention) {
             const current = brandMap.get(mention.brand) || { mentions: 0, sentiments: [] };
-            current.sentiments.push(analysis.sentiment_score);
+            // Convert confidence (0-1) to sentiment score (0-100)
+            const sentimentScore = analysis.confidence ? analysis.confidence * 100 : 50;
+            current.sentiments.push(sentimentScore);
             brandMap.set(mention.brand, current);
           }
         });
@@ -231,7 +250,7 @@ export function CyberDashboard() {
         // Convert to BrandData format
         const processedBrands: BrandData[] = Array.from(brandMap.entries()).map(([name, data]) => {
           const avgSentiment = data.sentiments.length > 0 
-            ? (data.sentiments.reduce((sum, score) => sum + score, 0) / data.sentiments.length) * 100
+            ? (data.sentiments.reduce((sum, score) => sum + score, 0) / data.sentiments.length)
             : 50;
           
           // Simulate trend (in real app, compare with previous period)
@@ -480,6 +499,7 @@ export function CyberDashboard() {
               <div
                 key={brand.name}
                 className={`relative bg-gray-900/60 backdrop-blur-md border ${getSentimentBorderColor(brand.sentiment)} rounded-2xl p-6 hover:transform hover:scale-102 hover:translate-y-[-2px] transition-all duration-300 cursor-pointer group hover:shadow-lg ${getGlowColor(brand.sentiment)}`}
+                onClick={() => router.push(`/brand/${encodeURIComponent(brand.name)}`)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
