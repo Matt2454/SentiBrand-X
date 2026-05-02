@@ -215,23 +215,27 @@ export default function AnalyticsPage() {
   // Fetch analytics data only when a brand is selected
   useEffect(() => {
     async function fetchData() {
-      if (!selectedBrand) {
-        // Reset data when no brand is selected
-        setData({
-          dailyData: [],
-          topBrands: [],
-          crisisAlerts: 0,
-          trendingCount: 0,
-        });
-        return;
-      }
-
       try {
         setLoading(true);
+        
+        if (!selectedBrand) {
+          // CLEANUP: Reset data when no brand is selected
+          setData({
+            dailyData: [],
+            topBrands: [],
+            crisisAlerts: 0,
+            trendingCount: 0,
+          });
+          return;
+        }
+
+        // TARGETED QUERY: Only fetch data for selected brand
         const analyticsData = await getAnalyticsData(selectedBrand);
         setData(analyticsData);
+        
       } catch (error) {
         console.error("Error fetching analytics data:", error);
+        // CLEANUP: Reset data on error
         setData({
           dailyData: [],
           topBrands: [],
@@ -239,6 +243,7 @@ export default function AnalyticsPage() {
           trendingCount: 0,
         });
       } finally {
+        // PROPER STATE MANAGEMENT: Always reset loading state
         setLoading(false);
       }
     }
