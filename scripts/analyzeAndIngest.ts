@@ -43,16 +43,12 @@ async function insertOrGetMentionId(
     .insert({
       external_id: tweet.id,
       brand: tweet.brand,
-      author_handle: tweet.authorHandle,
-      author_followers: tweet.authorFollowers,
+      author_handle: tweet.author,
       source: tweet.source,
       raw_text: tweet.text,
       normalized_text: normalizedText,
       language_code: tweet.lang,
       posted_at: tweet.createdAt,
-      likes: tweet.likes,
-      retweets: tweet.retweets,
-      replies: tweet.replies,
     })
     .select("id")
     .single();

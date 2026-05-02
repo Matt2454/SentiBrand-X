@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { BarChart3, TrendingUp, Calendar, Download, LayoutDashboard, MessageSquareText, Search, Filter } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, Download, LayoutDashboard, MessageSquareText, Search } from "lucide-react";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { LiveMentionsStatus } from "../../components/LiveMentionsStatus";
+import { BrandSelector } from "../../components/BrandSelector";
 import Link from "next/link";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { calculateInfluenceScore, calculateWeightedSentiment } from "../../lib/influenceCalculator";
@@ -208,45 +209,35 @@ export default function AnalyticsPage() {
     crisisAlerts: 0,
     trendingCount: 0,
   });
-  const [loading, setLoading] = useState(true);
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
-  // Fetch available brands on mount
+  // Fetch analytics data only when a brand is selected
   useEffect(() => {
-    async function fetchBrands() {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) return;
-
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-      const { data, error } = await supabase
-        .from("brand_mentions")
-        .select("brand")
-        .order("brand");
-
-      if (error) {
-        console.error("Error fetching brands:", error);
+    async function fetchData() {
+      if (!selectedBrand) {
+        // Reset data when no brand is selected
+        setData({
+          dailyData: [],
+          topBrands: [],
+          crisisAlerts: 0,
+          trendingCount: 0,
+        });
         return;
       }
 
-      const brands = [...new Set((data || []).map(m => m.brand))].sort();
-      setAvailableBrands(brands);
-    }
-
-    fetchBrands();
-  }, []);
-
-  useEffect(() => {
-    async function fetchData() {
       try {
         setLoading(true);
-        const analyticsData = await getAnalyticsData(selectedBrand || undefined);
+        const analyticsData = await getAnalyticsData(selectedBrand);
         setData(analyticsData);
       } catch (error) {
         console.error("Error fetching analytics data:", error);
+        setData({
+          dailyData: [],
+          topBrands: [],
+          crisisAlerts: 0,
+          trendingCount: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -255,11 +246,62 @@ export default function AnalyticsPage() {
     fetchData();
   }, [selectedBrand]);
 
+  const handleBrandSelect = (brand: string | null) => {
+    setSelectedBrand(brand);
+  };
+
+  if (!selectedBrand) {
+    return (
+      <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+        <div className="container mx-auto px-4 py-8">
+          <header className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Il Cervello · Advanced Analytics
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  Sentiment Intelligence Dashboard
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <LiveMentionsStatus />
+                <ThemeToggle />
+              </div>
+            </div>
+            
+            {/* Brand Selector */}
+            <div className="mt-4 flex items-center gap-4">
+              <BrandSelector 
+                onBrandSelect={handleBrandSelect}
+                placeholder="Select a brand to view analytics..."
+                className="flex-1 max-w-md"
+              />
+            </div>
+          </header>
+
+          {/* Empty State */}
+          <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-12 text-center dark:border-zinc-800 dark:bg-zinc-900">
+            <BarChart3 className="mx-auto h-16 w-16 text-zinc-400" />
+            <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              Select a Brand to View Analytics
+            </h3>
+            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+              Choose a brand from the dropdown above to see detailed sentiment analysis, trends, and performance metrics.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-zinc-500 dark:text-zinc-400">Loading analytics...</div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-zinc-500 dark:text-zinc-400">Loading analytics for {selectedBrand}...</div>
+          </div>
         </div>
       </main>
     );
@@ -322,19 +364,11 @@ export default function AnalyticsPage() {
             
             {/* Brand Selector */}
             <div className="mt-4 flex items-center gap-4">
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <Filter className="h-4 w-4 text-zinc-500" />
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 transition focus:ring-4 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                >
-                  <option value="">All Brands</option>
-                  {availableBrands.map(brand => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </select>
-              </div>
+              <BrandSelector 
+                onBrandSelect={handleBrandSelect}
+                placeholder="Select a brand to view analytics..."
+                className="flex-1 max-w-md"
+              />
               {selectedBrand && (
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">
                   Showing data for <span className="font-medium text-zinc-900 dark:text-zinc-100">{selectedBrand}</span>

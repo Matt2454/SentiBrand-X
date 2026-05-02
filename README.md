@@ -1,8 +1,5 @@
 # SentiBrand X Analyzer
 
-## 🚀 Live Demo
-👉 [sentibrand.netlify.app](https://sentibrand.netlify.app)
-
 Real-time sentiment dashboard for brand mentions from X/Twitter, powered by Next.js, Hugging Face, and Supabase.
 
 ## Tech Stack
