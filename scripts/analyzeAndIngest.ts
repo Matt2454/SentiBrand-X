@@ -80,7 +80,8 @@ async function insertOrGetMentionId(
 }
 
 async function run() {
-  const { supabase } = await import("../lib/supabase");
+  const { createSupabaseClient } = await import("../lib/supabase");
+  const supabase = createSupabaseClient();
   const mockDataPath = path.resolve(__dirname, "../data/mockData.json");
   const raw = await readFile(mockDataPath, "utf8");
   const tweets = JSON.parse(raw) as MockTweet[];
