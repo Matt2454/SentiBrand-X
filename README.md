@@ -1,3 +1,6 @@
+## Live Demo
+[senti-brand-x.vercel.app](https://senti-brand-x.vercel.app)
+
 # SentiBrand X Analyzer
 
 Real-time sentiment dashboard for brand mentions from X/Twitter, powered by Next.js, Hugging Face, and Supabase.
