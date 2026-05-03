@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Activity, Zap, Wifi } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Zap, Wifi, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { createSupabaseClient } from "../lib/supabase";
@@ -16,11 +16,13 @@ interface BrandData {
 
 interface HeroStats {
   totalMentions: number;
+  analyzedCount: number;
   avgSentiment: number;
-  topBrand: string;
-  sentimentTrend: 'up' | 'down' | 'stable';
+  trend: 'up' | 'down' | 'stable';
   trendChange: number;
 }
+
+type TimeFilter = '24h' | '7d' | '30d';
 
 export function CyberDashboard() {
   const router = useRouter();
@@ -34,6 +36,182 @@ export function CyberDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('7d');
+
+  // Get date range based on time filter
+  const getDateRange = () => {
+    const now = new Date();
+    const startDate = new Date();
+    
+    switch (timeFilter) {
+      case '24h':
+        startDate.setDate(now.getDate() - 1);
+        break;
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+    }
+    
+    return {
+      start: startDate.toISOString(),
+      end: now.toISOString()
+    };
+  };
+
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      console.log("🚀 Starting data fetch...");
+      
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      console.log("🔧 Supabase config:", {
+        url: supabaseUrl ? "✅ Set" : "❌ Missing",
+        key: supabaseAnonKey ? "✅ Set" : "❌ Missing"
+      });
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error("❌ Missing Supabase configuration");
+        return;
+      }
+
+      console.log("🔗 Creating Supabase client...");
+      const supabase = createSupabaseClient();
+
+      // Get brand mentions and sentiment data using time filter
+      const dateRange = getDateRange();
+      
+      console.log("📅 Query date range:", {
+        from: dateRange.start,
+        to: dateRange.end,
+        filter: timeFilter
+      });
+
+      console.log("📡 Fetching brand mentions...");
+      const { data: mentions, error: mentionsError } = await supabase
+        .from("brand_mentions")
+        .select("id, brand, posted_at")
+        .gte("posted_at", dateRange.start)
+        .lte("posted_at", dateRange.end);
+
+      if (mentionsError) {
+        console.error("❌ Mentions query error:", mentionsError);
+        throw mentionsError;
+      }
+
+      console.log("✅ Mentions fetched:", mentions?.length || 0, "records");
+
+      // Get sentiment analyses
+      const mentionIds = mentions?.map(m => m.id) || [];
+      
+      if (mentionIds.length === 0) {
+        console.log("📊 No mentions found, setting empty state");
+        setBrands([]);
+        setHeroStats({
+          totalMentions: 0,
+          avgSentiment: 0,
+          topBrand: '',
+          sentimentTrend: 'stable',
+          trendChange: 0
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log("🔍 Fetching sentiment analyses...");
+      const { data: allAnalyses, error: analysesError } = await supabase
+        .from("sentiment_analyses")
+        .select("*")
+        .limit(1000);
+
+      if (analysesError) {
+        console.error("❌ Analyses query error:", analysesError);
+        throw analysesError;
+      }
+
+      console.log("✅ Analyses fetched:", allAnalyses?.length || 0, "records");
+
+      // Filter analyses client-side
+      const analyses = allAnalyses?.filter(analysis => mentionIds.includes(analysis.mention_id)) || [];
+      console.log("🎯 Filtered analyses for mentions:", analyses.length, "records");
+
+      // Process data
+      const brandMap = new Map<string, { mentions: number; sentiments: number[]; }>();
+
+      mentions?.forEach(mention => {
+        const brand = mention.brand;
+        if (!brandMap.has(brand)) {
+          brandMap.set(brand, { mentions: 0, sentiments: [] });
+        }
+        const brandData = brandMap.get(brand)!;
+        brandData.mentions++;
+        
+        const analysis = analyses.find(a => a.mention_id === mention.id);
+        if (analysis) {
+          brandData.sentiments.push(analysis.confidence * 100);
+        }
+      });
+
+      const processedBrands: BrandData[] = Array.from(brandMap.entries()).map(([brand, data]) => {
+        const avgSentiment = data.sentiments.length > 0 
+          ? data.sentiments.reduce((sum, sent) => sum + sent, 0) / data.sentiments.length 
+          : 50;
+        
+        return {
+          name: brand,
+          sentiment: avgSentiment,
+          mentions: data.mentions,
+          trend: (Math.random() > 0.5 ? 'up' : Math.random() > 0.5 ? 'down' : 'stable') as 'up' | 'down' | 'stable',
+          change: Math.floor(Math.random() * 20) - 10
+        };
+      }).sort((a, b) => b.mentions - a.mentions).slice(0, 8);
+
+      console.log("📊 Processed brands:", processedBrands.length);
+
+      // Calculate hero stats
+      const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
+      const avgSentiment = processedBrands.length > 0 
+        ? processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length 
+        : 50;
+      const topBrand = processedBrands.length > 0 ? processedBrands[0].name : '';
+
+      setBrands(processedBrands);
+      setHeroStats({
+        totalMentions,
+        avgSentiment,
+        topBrand,
+        sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
+        trendChange: Math.floor(Math.random() * 10) - 5
+      });
+
+      console.log("✅ Data processing complete");
+    } catch (error) {
+      console.error("❌ Error in fetchData:", error);
+      setBrands([]);
+      setHeroStats({
+        totalMentions: 0,
+        avgSentiment: 0,
+        topBrand: '',
+        sentimentTrend: 'stable',
+        trendChange: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Re-fetch data when time filter changes
+  useEffect(() => {
+    if (isConnected) {
+      fetchData();
+    }
+  }, [timeFilter, isConnected]);
 
   // Simulated connection status
   useEffect(() => {
@@ -100,21 +278,21 @@ export function CyberDashboard() {
         console.log("🔗 Creating Supabase client...");
         const supabase = createSupabaseClient();
 
-        // Get brand mentions and sentiment data
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+        // Get brand mentions and sentiment data using time filter
+        const dateRange = getDateRange();
         
         console.log("📅 Query date range:", {
-          from: thirtyDaysAgoISO,
-          days: 30
+          from: dateRange.start,
+          to: dateRange.end,
+          filter: timeFilter
         });
 
         console.log("📡 Fetching brand mentions...");
         const { data: mentions, error: mentionsError } = await supabase
           .from("brand_mentions")
           .select("id, brand, posted_at")
-          .gte("posted_at", thirtyDaysAgoISO);
+          .gte("posted_at", dateRange.start)
+          .lte("posted_at", dateRange.end);
 
         if (mentionsError) {
           console.error("❌ Mentions query error:", mentionsError);
@@ -450,7 +628,27 @@ export function CyberDashboard() {
               SENTIBRAND
             </h1>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              {/* Time Filter Selector */}
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <div className="flex gap-1 p-1 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                  {(['24h', '7d', '30d'] as TimeFilter[]).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setTimeFilter(filter)}
+                      className={`px-3 py-1 text-xs font-mono rounded transition-all ${
+                        timeFilter === filter
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'text-gray-400 hover:text-gray-300 hover:bg-gray-700/30'
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
               <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${
                 isConnected 
                   ? 'border-emerald-500/30 bg-emerald-500/10' 
