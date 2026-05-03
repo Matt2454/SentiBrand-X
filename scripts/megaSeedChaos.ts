@@ -120,6 +120,42 @@ interface BrandCategory {
   competitors: string[];
 }
 
+// AI relevance filtering
+async function isTweetRelevantToBrand(brand: string, tweetText: string): Promise<boolean> {
+  try {
+    const response = await fetch(`https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: `Is this tweet genuinely about the brand "${brand}"? Tweet: "${tweetText}". Answer only "yes" or "no".`,
+        parameters: {
+          max_new_tokens: 10,
+          temperature: 0.1,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      // Fallback: simple keyword matching if AI fails
+      return tweetText.toLowerCase().includes(brand.toLowerCase()) ||
+             tweetText.toLowerCase().includes(brand.toLowerCase().replace(/\s+/g, ''));
+    }
+
+    const result = await response.json();
+    const generatedText = result[0]?.generated_text?.toLowerCase().trim() || '';
+    
+    return generatedText.includes('yes');
+  } catch (error) {
+    // Fallback: simple keyword matching
+    console.log(`⚠️ AI relevance check failed for ${brand}, using fallback`);
+    return tweetText.toLowerCase().includes(brand.toLowerCase()) ||
+           tweetText.toLowerCase().includes(brand.toLowerCase().replace(/\s+/g, ''));
+  }
+}
+
 async function generateBrandCategories(brandName: string): Promise<BrandCategory> {
   try {
     const response = await fetch(`https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium/`, {
@@ -452,8 +488,12 @@ async function megaSeedChaos() {
         const authorId = Math.floor(Math.random() * 1000000);
         const authorHandle = `user_${authorId}`;
         
+        // AI relevance filtering - only assign relevant tweets to brands
+        // But we'll store ALL tweets in the database (irrelevant ones as "unassigned")
+        const assignedBrand = await isTweetRelevantToBrand(brand, tweet) ? brand : 'unassigned';
+        
         batchPromises.push({
-          brand,
+          brand: assignedBrand, // null if not relevant
           author_handle: authorHandle,
           raw_text: tweet,
           posted_at: postedAt,

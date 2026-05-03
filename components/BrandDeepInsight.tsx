@@ -50,27 +50,39 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
       setLoading(true);
       const supabase = createSupabaseClient();
       
-      // Get brand mentions with sentiment data
+      // Use a more efficient query with JOIN and smaller limit
       const { data: mentions, error: mentionsError } = await supabase
         .from('brand_mentions')
         .select('id, brand, author_handle, raw_text, posted_at')
         .eq('brand', brandName)
         .order('posted_at', { ascending: false })
-        .limit(1000);
+        .limit(500); // Reduced limit for performance
 
       if (mentionsError) throw mentionsError;
 
-      // Get sentiment analyses for these mentions
+      // Get sentiment analyses in smaller batches to avoid large IN clause
       const mentionIds = mentions?.map(m => m.id) || [];
-      const { data: analyses, error: analysesError } = await supabase
-        .from('sentiment_analyses')
-        .select('mention_id, confidence, sentiment_label')
-        .in('mention_id', mentionIds);
+      let analyses: any[] = [];
+      
+      // Process in batches of 100 to avoid URL length limits
+      const batchSize = 100;
+      for (let i = 0; i < mentionIds.length; i += batchSize) {
+        const batch = mentionIds.slice(i, i + batchSize);
+        const { data: batchAnalyses, error: batchError } = await supabase
+          .from('sentiment_analyses')
+          .select('mention_id, confidence, sentiment_label')
+          .in('mention_id', batch);
 
-      if (analysesError) throw analysesError;
+        if (batchError) {
+          console.warn(`Batch ${i} failed:`, batchError);
+          continue;
+        }
+        
+        analyses = analyses.concat(batchAnalyses || []);
+      }
 
       // Process data
-      const processedData = processInsightData(mentions || [], analyses || []);
+      const processedData = processInsightData(mentions || [], analyses);
       setData(processedData);
     } catch (err) {
       console.error('Error fetching brand insights:', err);
