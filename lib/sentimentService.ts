@@ -1,12 +1,15 @@
 import { HfInference } from "@huggingface/inference";
+import { AdvancedFilteringService, type TweetAnalysis } from "./advancedFilteringService";
 
-type SentimentLabel = "Negative" | "Neutral" | "Positive" | "Unknown";
+type SentimentLabel = "Negative" | "Neutral" | "Positive" | "Unknown" | "Spam";
 
 type SentimentAnalysisResult = {
   sentiment: SentimentLabel;
   confidence: number;
   rawLabel?: string;
   error?: boolean;
+  filterAnalysis?: any;
+  shouldSkip?: boolean; // Skip if spam/irrelevant
 };
 
 const MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment";
@@ -31,8 +34,44 @@ function getInferenceClient(): HfInference {
 
 export async function analyzeSentiment(
   text: string,
+  brand?: string,
+  authorHandle?: string,
 ): Promise<SentimentAnalysisResult> {
   try {
+    // Advanced filtering first if brand is provided
+    if (brand && authorHandle) {
+      try {
+        const filteringService = new AdvancedFilteringService();
+        const analysis: TweetAnalysis = {
+          text,
+          brand,
+          authorHandle,
+          postedAt: new Date().toISOString()
+        };
+
+        const filterResult = await filteringService.filterTweet(analysis);
+
+        // If spam or irrelevant, skip sentiment analysis
+        if (filterResult.isSpam || !filterResult.isRelevant) {
+          return {
+            sentiment: "Spam",
+            confidence: filterResult.confidence,
+            filterAnalysis: filterResult,
+            shouldSkip: true
+          };
+        }
+
+        // Adjust sentiment confidence based on sarcasm detection
+        const adjustedConfidence = filterResult.isSarcastic ? 
+          Math.min(0.3, filterResult.sentimentQuality) : 
+          filterResult.sentimentQuality;
+
+      } catch (filterError) {
+        console.log("Advanced filtering failed, proceeding with basic sentiment analysis");
+      }
+    }
+
+    // Proceed with sentiment analysis
     const hf = getInferenceClient();
     const output = await hf.textClassification({
       model: MODEL_NAME,
@@ -56,4 +95,11 @@ export async function analyzeSentiment(
       error: true,
     };
   }
+}
+
+// Legacy function for backward compatibility
+export async function analyzeSentimentBasic(
+  text: string,
+): Promise<SentimentAnalysisResult> {
+  return analyzeSentiment(text);
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient } from '../lib/supabase';
+import { AdvancedFilteringService, type TweetAnalysis } from '../lib/advancedFilteringService';
 import { config } from 'dotenv';
 
 // Load environment variables from .env.local
@@ -120,39 +121,49 @@ interface BrandCategory {
   competitors: string[];
 }
 
-// AI relevance filtering
-async function isTweetRelevantToBrand(brand: string, tweetText: string): Promise<boolean> {
-  try {
-    const response = await fetch(`https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: `Is this tweet genuinely about the brand "${brand}"? Tweet: "${tweetText}". Answer only "yes" or "no".`,
-        parameters: {
-          max_new_tokens: 10,
-          temperature: 0.1,
-        }
-      })
-    });
+// Advanced filtering service instance
+const filteringService = new AdvancedFilteringService();
 
-    if (!response.ok) {
-      // Fallback: simple keyword matching if AI fails
-      return tweetText.toLowerCase().includes(brand.toLowerCase()) ||
-             tweetText.toLowerCase().includes(brand.toLowerCase().replace(/\s+/g, ''));
+// Advanced tweet filtering with multi-layer analysis
+async function filterTweetForBrand(brand: string, tweetText: string, authorHandle: string): Promise<{ shouldAssign: boolean; brand: string; analysis: any }> {
+  try {
+    const analysis: TweetAnalysis = {
+      text: tweetText,
+      brand,
+      authorHandle,
+      postedAt: new Date().toISOString()
+    };
+
+    const filterResult = await filteringService.filterTweet(analysis);
+    
+    // Log detailed analysis for debugging
+    if (filterResult.isSpam || filterResult.shouldReview || filterResult.confidence < 0.7) {
+      console.log(`🔍 Advanced Filter Analysis for ${brand}:`);
+      console.log(`   Text: "${tweetText.substring(0, 80)}..."`);
+      console.log(`   Spam: ${filterResult.isSpam}, Relevant: ${filterResult.isRelevant}`);
+      console.log(`   Confidence: ${(filterResult.confidence * 100).toFixed(1)}%`);
+      console.log(`   Intent: ${filterResult.intent}, Topic: ${filterResult.topic}`);
+      console.log(`   Sarcasm: ${filterResult.isSarcastic}, Quality: ${filterResult.qualityScore}/100`);
+      console.log(`   Reasoning: ${filterResult.reasoning.join('; ')}`);
     }
 
-    const result = await response.json();
-    const generatedText = result[0]?.generated_text?.toLowerCase().trim() || '';
-    
-    return generatedText.includes('yes');
+    const shouldAssign = filterResult.isRelevant && !filterResult.isSpam && !filterResult.isDuplicate;
+    const assignedBrand = shouldAssign ? brand : 'unassigned';
+
+    return {
+      shouldAssign,
+      brand: assignedBrand,
+      analysis: filterResult
+    };
   } catch (error) {
-    // Fallback: simple keyword matching
-    console.log(`⚠️ AI relevance check failed for ${brand}, using fallback`);
-    return tweetText.toLowerCase().includes(brand.toLowerCase()) ||
-           tweetText.toLowerCase().includes(brand.toLowerCase().replace(/\s+/g, ''));
+    console.log(`⚠️ Advanced filtering failed for ${brand}, using fallback`);
+    // Fallback to basic brand mention check
+    const hasBrand = tweetText.toLowerCase().includes(brand.toLowerCase());
+    return {
+      shouldAssign: hasBrand,
+      brand: hasBrand ? brand : 'unassigned',
+      analysis: { error: 'Advanced filtering failed', fallback: true }
+    };
   }
 }
 
@@ -488,9 +499,10 @@ async function megaSeedChaos() {
         const authorId = Math.floor(Math.random() * 1000000);
         const authorHandle = `user_${authorId}`;
         
-        // AI relevance filtering - only assign relevant tweets to brands
-        // But we'll store ALL tweets in the database (irrelevant ones as "unassigned")
-        const assignedBrand = await isTweetRelevantToBrand(brand, tweet) ? brand : 'unassigned';
+        // Advanced AI filtering - multi-layer analysis for spam, relevance, sarcasm, etc.
+        // Store ALL tweets in database, but only assign relevant ones to brands
+        const filterResult = await filterTweetForBrand(brand, tweet, authorHandle);
+        const assignedBrand = filterResult.brand;
         
         batchPromises.push({
           brand: assignedBrand, // null if not relevant
