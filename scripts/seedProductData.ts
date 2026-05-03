@@ -253,10 +253,7 @@ async function seedProductData() {
           author_handle: mention.author_handle,
           raw_text: mention.text,
           posted_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random within last 30 days
-          engagement_likes: Math.floor(Math.random() * 1000),
-          engagement_retweets: Math.floor(Math.random() * 500),
-          engagement_comments: Math.floor(Math.random() * 200),
-          reach_estimate: Math.floor(Math.random() * 10000)
+          external_id: `seed-${Date.now()}-${Math.random()}`
         })
         .select()
         .single();
@@ -273,7 +270,7 @@ async function seedProductData() {
           mention_id: mentionData.id,
           model_name: 'product-test-seed',
           sentiment_label: mention.sentiment,
-          confidence: mention.confidence,
+          confidence: 0.95,
           latency_ms: Math.floor(Math.random() * 1000)
         });
 
