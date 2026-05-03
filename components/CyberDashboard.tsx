@@ -99,7 +99,8 @@ export function CyberDashboard() {
         .from("brand_mentions")
         .select("id, brand, posted_at")
         .gte("posted_at", dateRange.start)
-        .lte("posted_at", dateRange.end);
+        .lte("posted_at", dateRange.end)
+        .limit(10000); // Reasonable limit for performance
 
       if (mentionsError) {
         console.error("❌ Mentions query error:", mentionsError);
@@ -125,11 +126,23 @@ export function CyberDashboard() {
         return;
       }
 
+      // Get total count for accurate hero stats
+      console.log("� Getting total mentions count...");
+      const { count: totalCount, error: countError } = await supabase
+        .from("brand_mentions")
+        .select("*", { count: "exact", head: true });
+
+      if (countError) {
+        console.error("❌ Count query error:", countError);
+      } else {
+        console.log("✅ Total mentions in database:", totalCount);
+      }
+
       console.log("🔍 Fetching sentiment analyses...");
       const { data: allAnalyses, error: analysesError } = await supabase
         .from("sentiment_analyses")
         .select("*")
-        .limit(1000);
+        .limit(5000); // Reasonable limit for performance
 
       if (analysesError) {
         console.error("❌ Analyses query error:", analysesError);
@@ -175,8 +188,8 @@ export function CyberDashboard() {
 
       console.log("📊 Processed brands:", processedBrands.length);
 
-      // Calculate hero stats
-      const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
+      // Calculate hero stats using real database total
+      const realTotalMentions = totalCount || 0;
       const avgSentiment = processedBrands.length > 0 
         ? parseFloat((processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length).toFixed(1))
         : 0;
@@ -184,7 +197,7 @@ export function CyberDashboard() {
 
       setBrands(processedBrands);
       setHeroStats({
-        totalMentions,
+        totalMentions: realTotalMentions,
         avgSentiment,
         topBrand,
         sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
@@ -373,13 +386,25 @@ export function CyberDashboard() {
 
         console.log("✅ Simple query successful, data:", testData);
 
-        // Try alternative approach: get all recent analyses and filter client-side
-        console.log("📡 Fetching all recent sentiment analyses...");
+        // Get total count for accurate hero stats
+        console.log("📊 Getting total mentions count...");
+        const { count: totalCount, error: countError } = await supabase
+          .from("brand_mentions")
+          .select("*", { count: "exact", head: true });
+
+        if (countError) {
+          console.error("❌ Count query error:", countError);
+        } else {
+          console.log("✅ Total mentions in database:", totalCount);
+        }
+
+        // Try alternative approach: get recent analyses and filter client-side
+        console.log("📡 Fetching recent sentiment analyses...");
         const { data: allAnalyses, error: allAnalysesError } = await supabase
           .from("sentiment_analyses")
           .select("mention_id, confidence, sentiment_label")
           .order("created_at", { ascending: false })
-          .limit(1000); // Get recent analyses
+          .limit(5000); // Reasonable limit for performance
 
         if (allAnalysesError) {
           console.error("❌ All analyses query error:", allAnalysesError);
@@ -412,8 +437,8 @@ export function CyberDashboard() {
             };
           }).sort((a, b) => b.mentions - a.mentions);
 
-          // Calculate hero stats
-          const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
+          // Calculate hero stats using real database total
+          const realTotalMentions = totalCount || 0;
           const avgSentiment = processedBrands.length > 0
             ? parseFloat((processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length).toFixed(1))
             : 0;
@@ -421,7 +446,7 @@ export function CyberDashboard() {
 
           setBrands(processedBrands.slice(0, 8));
           setHeroStats({
-            totalMentions,
+            totalMentions: realTotalMentions,
             avgSentiment,
             topBrand,
             sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
@@ -483,8 +508,8 @@ export function CyberDashboard() {
           };
         }).sort((a, b) => b.mentions - a.mentions);
 
-        // Calculate hero stats
-        const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
+        // Calculate hero stats using real database total
+        const realTotalMentions = totalCount || 0;
         const avgSentiment = processedBrands.length > 0
           ? parseFloat((processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length).toFixed(1))
           : 0;
@@ -492,7 +517,7 @@ export function CyberDashboard() {
 
         setBrands(processedBrands.slice(0, 8)); // Top 8 brands
         setHeroStats({
-          totalMentions,
+          totalMentions: realTotalMentions,
           avgSentiment,
           topBrand,
           sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
