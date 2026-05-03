@@ -236,6 +236,7 @@ export function CyberDashboard() {
           
           if (error) {
             console.error("❌ Supabase query error:", error);
+            console.error("Error details:", JSON.stringify(error, null, 2));
             setIsConnected(false);
           } else {
             console.log("✅ Supabase connection successful, data:", data);

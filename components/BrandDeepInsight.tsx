@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseClient } from '@/lib/supabase';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ArrowLeft, TrendingUp, TrendingDown, Zap, BarChart3, MessageSquare } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, MessageSquare, Clock } from 'lucide-react';
 
 interface BrandInsightData {
   totalMentions: number;
@@ -276,7 +276,7 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
           <div className="relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-emerald-400" />
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
                 <h2 className="text-lg font-mono font-bold text-white dark:text-white">Sentiment Distribution</h2>
               </div>
             </div>
@@ -388,36 +388,120 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
         </div>
       </div>
 
-      {/* Recent Mentions Section */}
+      {/* Top Products Section */}
       <div className="container mx-auto px-6 py-8">
-        <div className="bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6">
-          <h3 className="text-xl font-bold mb-6 text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            Live Feed: {brandName}
-          </h3>
-          
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {data.recentMentions?.map((mention) => (
-              <div key={mention.id} className="p-4 rounded-xl border border-white/10 dark:border-white/10 bg-black/20 dark:bg-black/20 backdrop-blur-md hover:border-white/20 dark:hover:border-white/20 transition-all duration-300">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-sm text-gray-400 dark:text-gray-400 font-mono">
-                    {new Date(mention.posted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    mention.sentiment >= 70 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
-                      mention.sentiment >= 40 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 
-                      'bg-red-500/20 text-red-400 border border-red-500/30'
-                    }`}>
-                      {mention.sentiment > 0 ? '+' : ''}{mention.sentiment.toFixed(1)}%
-                    </span>
+        <div className="bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6 mb-6">
+          <h3 className="text-lg font-bold text-white dark:text-white mb-4">Top Products</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {brandName === 'AMD' && [
+              'Ryzen 9000', 'Radeon RX 7900', 'Ryzen 7000', 'Threadripper 7000', 'EPYC 9004', 'Radeon RX 6700'
+            ].map((product) => (
+              <div
+                key={product}
+                onClick={() => router.push(`/brand/${encodeURIComponent(brandName)}/${encodeURIComponent(product)}`)}
+                className="bg-gray-800/50 dark:bg-gray-800/50 border border-gray-700/50 dark:border-gray-700/50 rounded-lg p-4 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white dark:text-white font-mono text-sm">{product}</h4>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-pulse"></div>
                 </div>
-                <p className="text-gray-200 dark:text-gray-200 text-sm leading-relaxed">{mention.text}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs text-gray-400 dark:text-gray-400 font-mono">@{mention.author}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-500">•</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-400 font-mono">
-                    Confidence: {Math.round(mention.confidence * 100)}%
-                  </span>
+                <p className="text-gray-400 dark:text-gray-400 text-xs">Click to analyze</p>
+              </div>
+            ))}
+            {brandName === 'Apple' && [
+              'iPhone 16', 'MacBook Pro M4', 'AirPods Pro', 'iPad Air', 'Apple Watch Ultra', 'Vision Pro'
+            ].map((product) => (
+              <div
+                key={product}
+                onClick={() => router.push(`/brand/${encodeURIComponent(brandName)}/${encodeURIComponent(product)}`)}
+                className="bg-gray-800/50 dark:bg-gray-800/50 border border-gray-700/50 dark:border-gray-700/50 rounded-lg p-4 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white dark:text-white font-mono text-sm">{product}</h4>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-pulse"></div>
+                </div>
+                <p className="text-gray-400 dark:text-gray-400 text-xs">Click to analyze</p>
+              </div>
+            ))}
+            {brandName === 'Tesla' && [
+              'Model 3 Highland', 'Model S Plaid', 'Model X', 'Cybertruck', 'Powerwall', 'Supercharger'
+            ].map((product) => (
+              <div
+                key={product}
+                onClick={() => router.push(`/brand/${encodeURIComponent(brandName)}/${encodeURIComponent(product)}`)}
+                className="bg-gray-800/50 dark:bg-gray-800/50 border border-gray-700/50 dark:border-gray-700/50 rounded-lg p-4 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white dark:text-white font-mono text-sm">{product}</h4>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-pulse"></div>
+                </div>
+                <p className="text-gray-400 dark:text-gray-400 text-xs">Click to analyze</p>
+              </div>
+            ))}
+            {brandName === 'Sony' && [
+              'PlayStation 6', 'PlayStation 5 Pro', 'Xperia 1 VI', 'WH-1000XM5', 'Alpha 7 IV', 'Bravia XR'
+            ].map((product) => (
+              <div
+                key={product}
+                onClick={() => router.push(`/brand/${encodeURIComponent(brandName)}/${encodeURIComponent(product)}`)}
+                className="bg-gray-800/50 dark:bg-gray-800/50 border border-gray-700/50 dark:border-gray-700/50 rounded-lg p-4 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white dark:text-white font-mono text-sm">{product}</h4>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-pulse"></div>
+                </div>
+                <p className="text-gray-400 dark:text-gray-400 text-xs">Click to analyze</p>
+              </div>
+            ))}
+            {brandName === 'Microsoft' && [
+              'Copilot Pro', 'Surface Pro 10', 'Xbox Series X', 'Windows 12', 'Teams Premium', 'Azure AI'
+            ].map((product) => (
+              <div
+                key={product}
+                onClick={() => router.push(`/brand/${encodeURIComponent(brandName)}/${encodeURIComponent(product)}`)}
+                className="bg-gray-800/50 dark:bg-gray-800/50 border border-gray-700/50 dark:border-gray-700/50 rounded-lg p-4 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white dark:text-white font-mono text-sm">{product}</h4>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-pulse"></div>
+                </div>
+                <p className="text-gray-400 dark:text-gray-400 text-xs">Click to analyze</p>
+              </div>
+            ))}
+            {(!['AMD', 'Apple', 'Tesla', 'Sony', 'Microsoft'].includes(brandName)) && (
+              <div className="col-span-full text-center">
+                <p className="text-gray-400 dark:text-gray-400">No products available for {brandName}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Mentions */}
+        <div className="bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6">
+          <h3 className="text-lg font-bold text-white dark:text-white mb-4">Recent Mentions</h3>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {data?.recentMentions.map((mention) => (
+              <div key={mention.id} className="border border-gray-800/50 dark:border-gray-800/50 rounded-lg p-4 hover:border-white/10 dark:hover:border-white/10 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-gray-400 dark:text-gray-400" />
+                    <span className="text-sm text-gray-400 dark:text-gray-400">{mention.author}</span>
+                    <Clock className="w-4 h-4 text-gray-400 dark:text-gray-400 ml-2" />
+                    <span className="text-sm text-gray-400 dark:text-gray-400">
+                      {new Date(mention.posted_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className={`px-2 py-1 rounded text-xs font-mono ${
+                    mention.sentiment >= 70 ? 'bg-emerald-500/20 text-emerald-400' :
+                    mention.sentiment >= 40 ? 'bg-amber-500/20 text-amber-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>
+                    {mention.sentiment > 0 ? '+' : ''}{mention.sentiment.toFixed(1)}%
+                  </div>
+                </div>
+                <p className="text-gray-300 dark:text-gray-300 text-sm mb-2">{mention.text}</p>
+                <div className="text-xs text-gray-500">
+                  Confidence: {(mention.confidence * 100).toFixed(0)}%
                 </div>
               </div>
             ))}

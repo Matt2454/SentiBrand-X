@@ -9,7 +9,8 @@
     "lint": "eslint",
     "ingest:mock": "tsx scripts/ingestMockTweets.ts",
     "test:ai": "tsx scripts/testAI.ts",
-    "process:mentions": "tsx scripts/analyzeAndIngest.ts"
+    "process:mentions": "tsx scripts/analyzeAndIngest.ts",
+    "seed:product": "tsx scripts/seedProductData.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.15",
