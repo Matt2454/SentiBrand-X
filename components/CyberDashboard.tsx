@@ -177,7 +177,7 @@ export function CyberDashboard() {
       // Calculate hero stats
       const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
       const avgSentiment = processedBrands.length > 0 
-        ? Math.round(processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length)
+        ? parseFloat((processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length).toFixed(1))
         : 0;
       const topBrand = processedBrands.length > 0 ? processedBrands[0].name : '';
 
@@ -395,7 +395,7 @@ export function CyberDashboard() {
           });
           
           const processedBrands = Array.from(fallbackBrandMap.entries()).map(([name, data]) => {
-            const avgSentiment = 50; // Default neutral sentiment
+            const avgSentiment = 50.0; // Default neutral sentiment
             
             // Calculate trend based on sentiment (in real app, compare with previous period)
             const trend = (avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable') as 'up' | 'down' | 'stable';
@@ -413,7 +413,7 @@ export function CyberDashboard() {
           // Calculate hero stats
           const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
           const avgSentiment = processedBrands.length > 0
-            ? Math.round(processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length)
+            ? parseFloat((processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length).toFixed(1))
             : 0;
           const topBrand = processedBrands[0]?.name || 'No data';
 
@@ -484,7 +484,7 @@ export function CyberDashboard() {
         // Calculate hero stats
         const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
         const avgSentiment = processedBrands.length > 0
-          ? Math.round(processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length)
+          ? parseFloat((processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length).toFixed(1))
           : 0;
         const topBrand = processedBrands[0]?.name || '';
 
@@ -675,7 +675,7 @@ export function CyberDashboard() {
             </div>
             <div className="flex items-center gap-3 mb-2">
               <div className={`text-3xl font-bold ${getSentimentColor(heroStats.avgSentiment)}`}>
-                {heroStats.avgSentiment > 0 ? '+' : ''}{heroStats.avgSentiment}
+                {heroStats.avgSentiment > 0 ? '+' : ''}{heroStats.avgSentiment.toFixed(1)}
               </div>
               {heroStats.sentimentTrend !== 'stable' && (
                 heroStats.sentimentTrend === 'up' ? 
@@ -753,7 +753,7 @@ export function CyberDashboard() {
                       'bg-red-400 shadow-red-400/30 shadow-sm'
                     }`}></div>
                     <span className={`font-bold text-sm ${getSentimentColor(brand.sentiment)}`}>
-                      {brand.sentiment > 0 ? '+' : ''}{brand.sentiment}%
+                      {brand.sentiment > 0 ? '+' : ''}{brand.sentiment.toFixed(1)}%
                     </span>
                   </div>
                 </div>
