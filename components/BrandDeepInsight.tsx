@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseClient } from '@/lib/supabase';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ArrowLeft, TrendingUp, TrendingDown, Zap, BarChart3 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Zap, BarChart3, MessageSquare } from 'lucide-react';
 
 interface BrandInsightData {
   totalMentions: number;
@@ -18,6 +18,14 @@ interface BrandInsightData {
     date: string;
     sentiment: number;
     mentions: number;
+  }>;
+  recentMentions: Array<{
+    id: string;
+    text: string;
+    author: string;
+    posted_at: string;
+    sentiment: number;
+    confidence: number;
   }>;
 }
 
@@ -45,7 +53,7 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
       // Get brand mentions with sentiment data
       const { data: mentions, error: mentionsError } = await supabase
         .from('brand_mentions')
-        .select('id, brand, posted_at')
+        .select('id, brand, author_handle, raw_text, posted_at')
         .eq('brand', brandName)
         .order('posted_at', { ascending: false })
         .limit(1000);
@@ -121,13 +129,27 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
       .slice(-30) // Last 30 days
       .reverse();
 
+    // Get recent mentions for the feed
+    const recentMentions = mentions.slice(-10).reverse().map(mention => {
+      const analysis = analysisMap.get(mention.id);
+      return {
+        id: mention.id,
+        text: mention.raw_text || mention.text || 'Mention content',
+        author: mention.author_handle || '@user',
+        posted_at: mention.posted_at,
+        sentiment: analysis ? analysis.confidence * 100 : 50,
+        confidence: analysis ? analysis.confidence : 0.5
+      };
+    });
+
     const avgSentiment = sentimentCount > 0 ? totalSentiment / sentimentCount : 50;
 
     return {
       totalMentions: mentions.length,
       avgSentiment: parseFloat(avgSentiment.toFixed(1)),
       sentimentDistribution: sentimentCounts,
-      timelineData
+      timelineData,
+      recentMentions
     };
   };
 
@@ -177,34 +199,34 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 dark:bg-gray-950">
       {/* Header */}
-      <header className="border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-gray-800/50 dark:border-gray-800/50 bg-gray-950/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-800/50 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-400" />
+                <ArrowLeft className="w-5 h-5 text-gray-400 dark:text-gray-400" />
               </button>
               <div>
                 <h1 className="text-2xl font-mono font-bold text-emerald-400 tracking-wider">
                   {brandName.toUpperCase()}
                 </h1>
-                <p className="text-sm text-gray-400 font-mono">Brand Deep Insights</p>
+                <p className="text-sm text-gray-400 dark:text-gray-400 font-mono">Brand Deep Insights</p>
               </div>
             </div>
             
             {/* Hero Stats */}
             <div className="flex items-center gap-6">
               <div className="text-center">
-                <p className="text-xs text-gray-500 font-mono uppercase">Total Mentions</p>
-                <p className="text-2xl font-bold text-white font-mono">{data.totalMentions}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 font-mono uppercase">Total Mentions</p>
+                <p className="text-2xl font-bold text-white dark:text-white font-mono">{data.totalMentions}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-gray-500 font-mono uppercase">Avg Sentiment</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 font-mono uppercase">Avg Sentiment</p>
                 <p className={`text-2xl font-bold font-mono ${getSentimentColor(data.avgSentiment)}`}>
                   {data.avgSentiment > 0 ? '+' : ''}{data.avgSentiment}%
                 </p>
@@ -219,11 +241,11 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Sentiment Distribution - Doughnut Chart */}
-          <div className="relative bg-gray-900/60 backdrop-blur-md border border-gray-800/50 rounded-2xl p-6">
+          <div className="relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-mono font-bold text-white">Sentiment Distribution</h2>
+                <h2 className="text-lg font-mono font-bold text-white dark:text-white">Sentiment Distribution</h2>
               </div>
             </div>
             
@@ -273,7 +295,7 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: item.color }}
                   ></div>
-                  <span className="text-sm text-gray-400 font-mono">
+                  <span className="text-sm text-gray-400 dark:text-gray-400 font-mono">
                     {item.name}: {item.value}
                   </span>
                 </div>
@@ -282,11 +304,11 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
           </div>
 
           {/* Sentiment Trend - Area Chart */}
-          <div className="relative bg-gray-900/60 backdrop-blur-md border border-gray-800/50 rounded-2xl p-6">
+          <div className="relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-purple-400" />
-                <h2 className="text-lg font-mono font-bold text-white">Sentiment Trend</h2>
+                <h2 className="text-lg font-mono font-bold text-white dark:text-white">Sentiment Trend</h2>
               </div>
             </div>
             
@@ -330,6 +352,43 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Mentions Section */}
+      <div className="container mx-auto px-6 py-8">
+        <div className="bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6">
+          <h3 className="text-xl font-bold mb-6 text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            Live Feed: {brandName}
+          </h3>
+          
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {data.recentMentions?.map((mention) => (
+              <div key={mention.id} className="p-4 rounded-xl border border-white/10 dark:border-white/10 bg-black/20 dark:bg-black/20 backdrop-blur-md hover:border-white/20 dark:hover:border-white/20 transition-all duration-300">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-sm text-gray-400 dark:text-gray-400 font-mono">
+                    {new Date(mention.posted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    mention.sentiment >= 70 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
+                      mention.sentiment >= 40 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 
+                      'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
+                      {mention.sentiment > 0 ? '+' : ''}{mention.sentiment.toFixed(1)}%
+                    </span>
+                </div>
+                <p className="text-gray-200 dark:text-gray-200 text-sm leading-relaxed">{mention.text}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-400 dark:text-gray-400 font-mono">@{mention.author}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500">•</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-400 font-mono">
+                    Confidence: {Math.round(mention.confidence * 100)}%
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

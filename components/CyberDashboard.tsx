@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Activity, Zap, Wifi, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { AnimatedNumber } from "./AnimatedNumber";
+import { TrendingUp, TrendingDown, Activity, Clock, Zap, BarChart3, MessageSquare, Users, ArrowRight } from "lucide-react";
 import { createSupabaseClient } from "../lib/supabase";
+import ThemeToggle from './ThemeToggle';
+import { AnimatedNumber } from "./AnimatedNumber";
 
 interface BrandData {
   name: string;
@@ -603,9 +604,9 @@ export function CyberDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 dark:bg-gray-950">
       {/* Header */}
-      <header className="border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-gray-800/50 dark:border-gray-800/50 bg-gray-950/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-mono font-bold text-emerald-400 tracking-wider">
@@ -616,7 +617,7 @@ export function CyberDashboard() {
               {/* Time Filter Selector */}
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gray-400" />
-                <div className="flex gap-1 p-1 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <div className="flex gap-1 p-1 bg-gray-800/50 dark:bg-gray-800/50 rounded-lg border border-gray-700/50 dark:border-gray-700/50">
                   {(['24h', '7d', '30d'] as TimeFilter[]).map((filter) => (
                     <button
                       key={filter}
@@ -624,7 +625,7 @@ export function CyberDashboard() {
                       className={`px-3 py-1 text-xs font-mono rounded transition-all ${
                         timeFilter === filter
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'text-gray-400 hover:text-gray-300 hover:bg-gray-700/30'
+                          : 'text-gray-400 hover:text-gray-300 hover:bg-gray-700/30 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700/30'
                       }`}
                     >
                       {filter}
@@ -633,17 +634,13 @@ export function CyberDashboard() {
                 </div>
               </div>
               
-              <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${
-                isConnected 
-                  ? 'border-emerald-500/30 bg-emerald-500/10' 
-                  : 'border-red-500/30 bg-red-500/10'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
-                }`}></div>
-                <span className={`text-xs font-mono ${
-                  isConnected ? 'text-emerald-400' : 'text-red-400'
-                }`}>
+              {/* Theme Toggle */}
+              <ThemeToggle />
+              
+              {/* Live Indicator */}
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span className="text-xs font-mono text-emerald-400">
                   {isConnected ? 'LIVE' : 'OFFLINE'}
                 </span>
               </div>
@@ -656,36 +653,29 @@ export function CyberDashboard() {
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Volume Card */}
-          <div className="relative bg-gray-900/60 backdrop-blur-md border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 transition-all duration-300 hover:transform hover:scale-105">
+          <div className="relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 dark:hover:border-gray-700/50 transition-all duration-300 hover:transform hover:scale-105">
             <div className="flex items-center justify-between mb-4">
               <Activity className="w-5 h-5 text-blue-400" />
-              <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Volume</span>
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-500 uppercase tracking-wider">Volume</span>
             </div>
             <div className="text-3xl font-bold text-white mb-2">
               <AnimatedNumber value={heroStats.totalMentions} />
             </div>
-            <p className="text-sm text-gray-400">Total Mentions</p>
+            <p className="text-sm text-gray-400 dark:text-gray-400">Total Mentions</p>
           </div>
 
           {/* Sentiment Score Card */}
-          <div className="relative bg-gray-900/60 backdrop-blur-md border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 transition-all duration-300 hover:transform hover:scale-105">
+          <div className="relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 dark:hover:border-gray-700/50 transition-all duration-300 hover:transform hover:scale-105">
             <div className="flex items-center justify-between mb-4">
-              <Zap className="w-5 h-5 text-emerald-400" />
-              <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Sentiment</span>
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-500 uppercase tracking-wider">Sentiment</span>
             </div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`text-3xl font-bold ${getSentimentColor(heroStats.avgSentiment)}`}>
-                {heroStats.avgSentiment > 0 ? '+' : ''}{heroStats.avgSentiment.toFixed(1)}
-              </div>
-              {heroStats.sentimentTrend !== 'stable' && (
-                heroStats.sentimentTrend === 'up' ? 
-                  <TrendingUp className="w-5 h-5 text-emerald-400" /> :
-                  <TrendingDown className="w-5 h-5 text-red-400" />
-              )}
+            <div className={`text-3xl font-bold ${getSentimentColor(heroStats.avgSentiment)}`}>
+              {heroStats.avgSentiment > 0 ? '+' : ''}{heroStats.avgSentiment.toFixed(1)}
             </div>
             
             {/* Progress Bar */}
-            <div className="w-full bg-gray-800 rounded-full h-1 mb-2">
+            <div className="w-full bg-gray-800 dark:bg-gray-800 rounded-full h-1 mb-2">
               <div 
                 className={`h-1 rounded-full transition-all duration-500 ${
                   heroStats.avgSentiment >= 70 ? 'bg-emerald-400' :
@@ -694,79 +684,82 @@ export function CyberDashboard() {
                 style={{ width: `${Math.max(0, Math.min(100, heroStats.avgSentiment))}%` }}
               ></div>
             </div>
-            <p className="text-sm text-gray-400">Average Score</p>
+            <p className="text-sm text-gray-400 dark:text-gray-400">Average Score</p>
           </div>
 
           {/* Trend Card */}
-          <div className="relative bg-gray-900/60 backdrop-blur-md border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 transition-all duration-300 hover:transform hover:scale-105">
+          <div className="relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-800/50 dark:border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 dark:hover:border-gray-700/50 transition-all duration-300 hover:transform hover:scale-105">
             <div className="flex items-center justify-between mb-4">
-              <TrendingUp className="w-5 h-5 text-purple-400" />
-              <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Trend</span>
+              <Activity className="w-5 h-5 text-purple-400" />
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-500 uppercase tracking-wider">Trend</span>
             </div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-3xl font-bold text-white">
-                {heroStats.topBrand}
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-3xl font-bold text-white dark:text-white">
+                {heroStats.sentimentTrend === 'up' ? '+' : heroStats.sentimentTrend === 'down' ? '-' : ''}
+                {heroStats.trendChange.toFixed(1)}%
+              </span>
+              {heroStats.sentimentTrend === 'up' ? 
+                <TrendingUp className="w-5 h-5 text-emerald-400" /> :
+                heroStats.sentimentTrend === 'down' ?
+                <TrendingDown className="w-5 h-5 text-red-400" /> :
+                <Activity className="w-5 h-5 text-gray-400" />
+              }
             </div>
-            <p className="text-sm text-gray-400">Top Brand</p>
+            <p className="text-sm text-gray-400 dark:text-gray-400">vs previous period</p>
           </div>
         </div>
-
-        {/* Brand Feed */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-mono font-bold text-white mb-6">Brand Intelligence Feed</h2>
-          
-          <div className="grid gap-4">
-            {brands.map((brand, index) => (
-              <div
-                key={brand.name}
-                className={`relative bg-gray-900/60 backdrop-blur-md border ${getSentimentBorderColor(brand.sentiment)} rounded-2xl p-6 hover:transform hover:scale-102 hover:translate-y-[-2px] transition-all duration-300 cursor-pointer group hover:shadow-lg ${getGlowColor(brand.sentiment)}`}
-                onClick={() => router.push(`/brand/${encodeURIComponent(brand.name)}`)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Brand Name */}
-                    <div>
-                      <h3 className="text-lg font-bold text-white mb-1">{brand.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">{brand.mentions.toLocaleString()} mentions</span>
-                        {brand.trend !== 'stable' && (
-                          <div className={`flex items-center gap-1 text-xs ${
-                            brand.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
-                          }`}>
-                            {brand.trend === 'up' ? 
-                              <TrendingUp className="w-3 h-3" /> :
-                              <TrendingDown className="w-3 h-3" />
-                            }
-                            {Math.abs(brand.change).toFixed(1)}%
-                          </div>
-                        )}
-                      </div>
+        
+        {/* Brand Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {brands.map((brand, index) => (
+            <div
+              key={brand.name}
+              className={`relative bg-gray-900/60 dark:bg-gray-900/60 backdrop-blur-md border ${getSentimentBorderColor(brand.sentiment)} rounded-2xl p-6 hover:transform hover:scale-102 hover:translate-y-[-2px] transition-all duration-300 cursor-pointer group hover:shadow-lg ${getGlowColor(brand.sentiment)}`}
+              onClick={() => router.push(`/brand/${encodeURIComponent(brand.name)}`)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {/* Brand Name */}
+                  <div>
+                    <h3 className="text-lg font-bold text-white dark:text-white mb-1">{brand.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-400 dark:text-gray-400">{brand.mentions.toLocaleString()} mentions</span>
+                      {brand.trend !== 'stable' && (
+                        <div className={`flex items-center gap-1 text-xs ${
+                          brand.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          {brand.trend === 'up' ? 
+                            <TrendingUp className="w-3 h-3" /> :
+                            <TrendingDown className="w-3 h-3" />
+                          }
+                          {Math.abs(brand.change).toFixed(1)}%
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Sentiment Badge */}
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${getSentimentBorderColor(brand.sentiment)} ${getSentimentBgColor(brand.sentiment)} group-hover:border-opacity-60 transition-all duration-300`}>
-                    <div className={`w-2 h-2 rounded-full ${
-                      brand.sentiment >= 70 ? 'bg-emerald-400 shadow-emerald-400/50 shadow-sm' :
-                      brand.sentiment >= 40 ? 'bg-yellow-400 shadow-yellow-400/30 shadow-sm' :
-                      'bg-red-400 shadow-red-400/30 shadow-sm'
-                    }`}></div>
-                    <span className={`font-bold text-sm ${getSentimentColor(brand.sentiment)}`}>
-                      {brand.sentiment > 0 ? '+' : ''}{brand.sentiment.toFixed(1)}%
-                    </span>
                   </div>
                 </div>
 
-                {/* Hover Effect Border */}
-                <div className={`absolute inset-0 rounded-2xl border-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
-                  brand.sentiment >= 70 ? 'border-emerald-400/30' :
-                  brand.sentiment >= 40 ? 'border-yellow-400/20' :
-                  'border-red-400/20'
-                }`}></div>
+                {/* Sentiment Badge */}
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${getSentimentBorderColor(brand.sentiment)} ${getSentimentBgColor(brand.sentiment)} group-hover:border-opacity-60 transition-all duration-300`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    brand.sentiment >= 70 ? 'bg-emerald-400 shadow-emerald-400/50 shadow-sm' :
+                    brand.sentiment >= 40 ? 'bg-yellow-400 shadow-yellow-400/30 shadow-sm' :
+                    'bg-red-400 shadow-red-400/30 shadow-sm'
+                  }`}></div>
+                  <span className={`font-bold text-sm ${getSentimentColor(brand.sentiment)}`}>
+                    {brand.sentiment > 0 ? '+' : ''}{brand.sentiment.toFixed(1)}%
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
+
+              {/* Hover Effect Border */}
+              <div className={`absolute inset-0 rounded-2xl border-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
+                brand.sentiment >= 70 ? 'border-emerald-400/30' :
+                brand.sentiment >= 40 ? 'border-yellow-400/20' :
+                'border-red-400/20'
+              }`}></div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

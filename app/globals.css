@@ -22,3 +22,92 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Light theme styles */
+html:not(.dark) body {
+  background-color: #ffffff;
+  color: #171717;
+}
+
+html:not(.dark) .bg-gray-950 {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .bg-gray-900\/60 {
+  background-color: #f9fafb !important;
+}
+
+html:not(.dark) .border-gray-800\/50 {
+  border-color: #e5e7eb !important;
+}
+
+html:not(.dark) .text-white {
+  color: #171717 !important;
+}
+
+html:not(.dark) .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+html:not(.dark) .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html:not(.dark) .text-emerald-400 {
+  color: #059669 !important;
+}
+
+html:not(.dark) .text-blue-400 {
+  color: #2563eb !important;
+}
+
+html:not(.dark) .text-purple-400 {
+  color: #7c3aed !important;
+}
+
+html:not(.dark) .text-red-400 {
+  color: #dc2626 !important;
+}
+
+html:not(.dark) .text-yellow-400 {
+  color: #d97706 !important;
+}
+
+html:not(.dark) .text-amber-400 {
+  color: #f59e0b !important;
+}
+
+html:not(.dark) .text-cyan-400 {
+  color: #06b6d4 !important;
+}
+
+/* Header styles for light theme */
+html:not(.dark) .bg-gray-950\/80 {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .border-gray-800\/50 {
+  border-color: #e5e7eb !important;
+}
+
+html:not(.dark) .bg-gray-800\/50 {
+  background-color: #f3f4f6 !important;
+}
+
+html:not(.dark) .border-gray-700\/50 {
+  border-color: #d1d5db !important;
+}
+
+/* More specific header overrides */
+html:not(.dark) header {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+html:not(.dark) header.bg-gray-950\/80 {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) header.border-gray-800\/50 {
+  border-color: #e5e7eb !important;
+}
