@@ -1,5 +1,5 @@
-import { CyberDashboard } from "../components/CyberDashboard";
+import { SearchHomepage } from "../components/SearchHomepage";
 
 export default function Home() {
-  return <CyberDashboard />;
+  return <SearchHomepage />;
 }
