@@ -1,5 +1,5 @@
-## 🚀 Live Demo
-👉 [senti-brand-x.vercel.app](https://senti-brand-x.vercel.app)
+## Live Demo
+[senti-brand-x.vercel.app](https://senti-brand-x.vercel.app)
 
 # SentiBrand X Analyzer
 
