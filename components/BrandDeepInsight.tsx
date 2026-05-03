@@ -91,13 +91,31 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
     mentions.forEach(mention => {
       const analysis = analysisMap.get(mention.id);
       if (analysis) {
-        const sentiment = analysis.confidence * 100;
-        totalSentiment += sentiment;
-        sentimentCount++;
+        // Use sentiment_label instead of confidence
+        const label = analysis.sentiment_label?.toLowerCase();
         
-        if (sentiment >= 70) sentimentCounts.positive++;
-        else if (sentiment >= 40) sentimentCounts.neutral++;
-        else sentimentCounts.negative++;
+        if (label === 'positive') {
+          sentimentCounts.positive++;
+          totalSentiment += 85; // High score for positive
+        } else if (label === 'neutral') {
+          sentimentCounts.neutral++;
+          totalSentiment += 50; // Medium score for neutral
+        } else if (label === 'negative') {
+          sentimentCounts.negative++;
+          totalSentiment += 15; // Low score for negative
+        } else {
+          // Fallback: use confidence but invert for negative content
+          const sentiment = analysis.confidence * 100;
+          totalSentiment += sentiment;
+          sentimentCount++;
+          
+          if (sentiment >= 70) sentimentCounts.positive++;
+          else if (sentiment >= 40) sentimentCounts.neutral++;
+          else sentimentCounts.negative++;
+          return;
+        }
+        
+        sentimentCount++;
       }
     });
 
@@ -132,13 +150,27 @@ export default function BrandDeepInsight({ brandName }: { brandName: string }) {
     // Get recent mentions for the feed
     const recentMentions = mentions.slice(-10).reverse().map(mention => {
       const analysis = analysisMap.get(mention.id);
+      let sentiment = 50; // Default neutral
+      let confidence = analysis ? analysis.confidence : 0.5;
+      
+      if (analysis) {
+        const label = analysis.sentiment_label?.toLowerCase();
+        if (label === 'positive') {
+          sentiment = 85;
+        } else if (label === 'neutral') {
+          sentiment = 50;
+        } else if (label === 'negative') {
+          sentiment = 15;
+        }
+      }
+      
       return {
         id: mention.id,
         text: mention.raw_text || mention.text || 'Mention content',
         author: mention.author_handle || '@user',
         posted_at: mention.posted_at,
-        sentiment: analysis ? analysis.confidence * 100 : 50,
-        confidence: analysis ? analysis.confidence : 0.5
+        sentiment,
+        confidence
       };
     });
 
