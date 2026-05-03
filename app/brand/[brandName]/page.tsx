@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { TrendingUp, TrendingDown, Activity, ArrowLeft, Calendar, Users, MessageSquare, BarChart3, PieChart, TrendingUp as TrendingIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AnimatedNumber } from "../../../components/AnimatedNumber";
+import { createSupabaseClient } from "../../../lib/supabase";
 
 interface BrandData {
   name: string;
@@ -59,7 +59,7 @@ export default function BrandDetail() {
           throw new Error("Missing Supabase configuration");
         }
 
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const supabase = createSupabaseClient();
 
         // Get brand mentions from last 30 days
         const thirtyDaysAgo = new Date();

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { Search, GitCompare, TrendingUp, TrendingDown, Minus, LayoutDashboard, BarChart3, MessageSquareText } from "lucide-react";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { LiveMentionsStatus } from "../../components/LiveMentionsStatus";
 import Link from "next/link";
 import { calculateInfluenceScore, calculateWeightedSentiment, detectCrisisAlerts } from "../../lib/influenceCalculator";
 import type { BrandMention, SentimentAnalysis } from "../../types/dashboard";
+import { createSupabaseClient } from "../../lib/supabase";
 
 interface BrandComparison {
   brand: string;
@@ -59,7 +59,7 @@ export default function BrandSearchPage() {
 
       if (!supabaseUrl || !supabaseAnonKey) return;
 
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const supabase = createSupabaseClient();
 
       const { data, error } = await supabase
         .from("brand_mentions")
@@ -93,7 +93,7 @@ export default function BrandSearchPage() {
       [`comparison${side}`]: null 
     }));
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = createSupabaseClient();
 
     try {
       // Get mentions for this brand

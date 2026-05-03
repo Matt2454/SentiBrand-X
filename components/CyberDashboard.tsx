@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { TrendingUp, TrendingDown, Activity, Zap, Wifi } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { createSupabaseClient } from "../lib/supabase";
 
 interface BrandData {
   name: string;
@@ -50,7 +50,7 @@ export function CyberDashboard() {
         
         if (supabaseUrl && supabaseAnonKey) {
           console.log("🔗 Creating Supabase client...");
-          const supabase = createClient(supabaseUrl, supabaseAnonKey);
+          const supabase = createSupabaseClient();
           
           console.log("📡 Testing connection with simple query...");
           const { data, error } = await supabase.from('brand_mentions').select('id').limit(1);
@@ -98,7 +98,7 @@ export function CyberDashboard() {
         }
 
         console.log("🔗 Creating Supabase client...");
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const supabase = createSupabaseClient();
 
         // Get brand mentions and sentiment data
         const thirtyDaysAgo = new Date();
