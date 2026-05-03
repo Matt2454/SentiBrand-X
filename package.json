@@ -10,7 +10,8 @@
     "ingest:mock": "tsx scripts/ingestMockTweets.ts",
     "test:ai": "tsx scripts/testAI.ts",
     "process:mentions": "tsx scripts/analyzeAndIngest.ts",
-    "seed:product": "tsx scripts/seedProductData.ts"
+    "seed:product": "tsx scripts/seedProductData.ts",
+    "seed:mega": "tsx scripts/megaSeedChaos.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.15",
