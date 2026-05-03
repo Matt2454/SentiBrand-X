@@ -177,8 +177,8 @@ export function CyberDashboard() {
       // Calculate hero stats
       const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
       const avgSentiment = processedBrands.length > 0 
-        ? processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length 
-        : 50;
+        ? Math.round(processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length)
+        : 0;
       const topBrand = processedBrands.length > 0 ? processedBrands[0].name : '';
 
       setBrands(processedBrands);
@@ -187,7 +187,7 @@ export function CyberDashboard() {
         avgSentiment,
         topBrand,
         sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
-        trendChange: Math.floor(Math.random() * 10) - 5
+        trendChange: 0 // Remove random values, use real trend calculation
       });
 
       console.log("✅ Data processing complete");
@@ -397,18 +397,9 @@ export function CyberDashboard() {
           const processedBrands = Array.from(fallbackBrandMap.entries()).map(([name, data]) => {
             const avgSentiment = 50; // Default neutral sentiment
             
-            // Simulate trend (in real app, compare with previous period)
-            const randomValue = Math.random();
-            let trend: 'up' | 'down' | 'stable';
-            if (randomValue > 0.66) {
-              trend = 'up';
-            } else if (randomValue > 0.33) {
-              trend = 'down';
-            } else {
-              trend = 'stable';
-            }
-            
-            const change = trend === 'up' ? Math.random() * 20 : trend === 'down' ? -Math.random() * 20 : 0;
+            // Calculate trend based on sentiment (in real app, compare with previous period)
+            const trend = (avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable') as 'up' | 'down' | 'stable';
+            const change = 0; // Remove random values, use real trend calculation
 
             return {
               name,
@@ -419,23 +410,20 @@ export function CyberDashboard() {
             };
           }).sort((a, b) => b.mentions - a.mentions);
 
+          // Calculate hero stats
           const totalMentions = processedBrands.reduce((sum, brand) => sum + brand.mentions, 0);
           const avgSentiment = processedBrands.length > 0
             ? Math.round(processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length)
             : 0;
           const topBrand = processedBrands[0]?.name || 'No data';
-          
-          // Simulate sentiment trend
-          const sentimentTrend = Math.random() > 0.5 ? 'up' : Math.random() > 0.5 ? 'down' : 'stable';
-          const trendChange = sentimentTrend === 'up' ? 8.5 : sentimentTrend === 'down' ? -3.2 : 0;
 
           setBrands(processedBrands.slice(0, 8));
           setHeroStats({
             totalMentions,
             avgSentiment,
             topBrand,
-            sentimentTrend,
-            trendChange
+            sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
+            trendChange: 0
           });
           setLoading(false);
           return;
@@ -499,18 +487,14 @@ export function CyberDashboard() {
           ? Math.round(processedBrands.reduce((sum, brand) => sum + brand.sentiment, 0) / processedBrands.length)
           : 0;
         const topBrand = processedBrands[0]?.name || '';
-        
-        // Simulate sentiment trend
-        const sentimentTrend = Math.random() > 0.6 ? 'up' : Math.random() > 0.5 ? 'down' : 'stable';
-        const trendChange = sentimentTrend === 'up' ? 8.5 : sentimentTrend === 'down' ? -3.2 : 0;
 
         setBrands(processedBrands.slice(0, 8)); // Top 8 brands
         setHeroStats({
           totalMentions,
           avgSentiment,
           topBrand,
-          sentimentTrend,
-          trendChange
+          sentimentTrend: avgSentiment > 60 ? 'up' : avgSentiment < 40 ? 'down' : 'stable',
+          trendChange: 0
         });
 
       } catch (error) {
