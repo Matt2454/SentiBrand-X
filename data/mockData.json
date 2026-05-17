@@ -1,0 +1,47 @@
+[
+  {
+    "id": "1891000000000000001",
+    "brand": "AcmeCloud",
+    "author": "@devlina",
+    "text": "AcmeCloud uptime has been awesome this week. Shipping got way faster.",
+    "createdAt": "2026-05-01T15:22:00.000Z",
+    "lang": "en",
+    "source": "x"
+  },
+  {
+    "id": "1891000000000000002",
+    "brand": "AcmeCloud",
+    "author": "@infra_marc",
+    "text": "Experiencing random 503 errors from AcmeCloud API gateway today.",
+    "createdAt": "2026-05-01T16:10:00.000Z",
+    "lang": "en",
+    "source": "x"
+  },
+  {
+    "id": "1891000000000000003",
+    "brand": "NovaBank",
+    "author": "@fintechdaily",
+    "text": "NovaBank app redesign feels clean but login performance is still mixed.",
+    "createdAt": "2026-05-01T16:44:00.000Z",
+    "lang": "en",
+    "source": "x"
+  },
+  {
+    "id": "1891000000000000004",
+    "brand": "VoltMobile",
+    "author": "@rina_reviews",
+    "text": "VoltMobile support solved my roaming issue in 10 minutes. Respect.",
+    "createdAt": "2026-05-01T17:05:00.000Z",
+    "lang": "en",
+    "source": "x"
+  },
+  {
+    "id": "1891000000000000005",
+    "brand": "VoltMobile",
+    "author": "@itsleo",
+    "text": "Data packs are too expensive now. Might switch carriers soon.",
+    "createdAt": "2026-05-01T17:40:00.000Z",
+    "lang": "en",
+    "source": "x"
+  }
+]
