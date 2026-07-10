@@ -40,12 +40,20 @@ npm run dev
 - `npm run build` — production build
 - `npm run start` — run production server
 - `npm run lint` — run ESLint
+- `npm test` — run Vitest unit tests
 - `npm run ingest:mock` — simulate X ingestion stream from `data/mockData.json`
+- `npm run convert:xquik -- <export.json|jsonl> [output-json] [brand]` — convert Xquik tweet exports to mock ingestion records
 - `npm run test:ai` — run a quick Hugging Face sentiment smoke test
 
 ## Data Ingestion Mock Pipeline
 
 Mock records are stored in `data/mockData.json`.
+
+To create mock records from a reviewed Xquik tweet export:
+
+```bash
+npm run convert:xquik -- ./xquik-export.json data/mockData.json AcmeCloud
+```
 
 Run:
 
